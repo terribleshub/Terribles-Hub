@@ -1,0 +1,7 @@
+{
+  "whitelist": [
+    "HWID-EJEMPLO-1234-5678",
+    "HWID-EJEMPLO-ABCD-EFGH"
+  ],
+  "enabled": true
+}
