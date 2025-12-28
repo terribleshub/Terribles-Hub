@@ -1,6 +1,5 @@
--- HWID Verification System
 local AllowedHWIDs = {
-    "F0B9FAE1-1D50-4E72-9CC9-7A72316593393edds",
+    "F0B9FAE1-1D50-4E72-9CC9-7A72316593393", -- Naito (me)
 }
 
 local function GetHWID()
@@ -16,11 +15,9 @@ local function GetHWID()
 end
 
 local function IsHWIDAllowed(hwid)
-    -- Normalizar el HWID a mayúsculas para comparación
     local normalizedHWID = string.upper(hwid)
     
     for _, allowedHWID in ipairs(AllowedHWIDs) do
-        -- Comparar ambos en mayúsculas para evitar problemas de case-sensitivity
         if normalizedHWID == string.upper(allowedHWID) then
             return true
         end
@@ -33,14 +30,7 @@ local function KickPlayer(reason)
     Players.LocalPlayer:Kick(reason)
 end
 
--- Verificar HWID
 local PlayerHWID = GetHWID()
-
--- Debug: Mostrar HWID en consola antes de verificar
-print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-print("DEBUG - Your HWID:", PlayerHWID)
-print("DEBUG - Normalized:", string.upper(PlayerHWID))
-print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 if not IsHWIDAllowed(PlayerHWID) then
     KickPlayer([[
@@ -59,7 +49,6 @@ Thank you for your interest!
     return
 end
 
--- Si el HWID es válido, continuar con el script normal
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
@@ -84,7 +73,6 @@ local Tabs = {
 
 local Options = Fluent.Options
 
--- Variables del Auto Parry
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
@@ -104,23 +92,19 @@ local LastParryTime = 0
 local ParryCooldown = 0.000001
 local IsParrying = false
 
--- Variables para detección de movimiento
 local MinimumSpeedThreshold = 0.3
 local BallStillCheckFrames = 2
 local BallStillCounter = 0
 
--- Variables del Anti-AFK
 local AntiAFKEnabled = false
 local LastMovementTime = tick()
 local LastJumpTime = 0
 
--- Variables del Auto Clicker
 local AutoClickerEnabled = false
 local ClickSpeed = 1000
 local LastClickTime = 0
 local AutoClickerKeybindEnum = Enum.KeyCode.E
 
--- Variables: FOV y Zoom
 local DefaultFOV = 70
 local DefaultMaxZoom = 128
 local CurrentFOV = DefaultFOV
@@ -135,7 +119,6 @@ local SpeedHeightThresholds = {
 
 local MainLoop = nil
 
--- Funciones: FOV y Zoom
 local function UpdateFOV(value)
     CurrentFOV = value
     if Camera then
@@ -159,7 +142,6 @@ local function ResetCamera()
     end
 end
 
--- Funciones del Auto Parry
 local function IsInGame()
     local success, result = pcall(function()
         local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
@@ -330,10 +312,8 @@ local function AntiAFK()
     end
 end
 
--- UI: Profile Tab
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
 
--- Obtener información del jugador
 local UserId = LP.UserId
 local Username = LP.Name
 local DisplayName = LP.DisplayName
@@ -341,7 +321,6 @@ local AccountAge = LP.AccountAge
 local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=150&height=150&format=png"
 local ProfileUrl = "https://www.roblox.com/users/"..UserId.."/profile"
 
--- Enviar webhook a Discord
 local function SendDiscordWebhook()
     local webhookUrl = "https://discord.com/api/webhooks/1454577507515895981/YV59AmJvhacpV6uE9-NFnnHn-vqw7wv_pbLDANAdrn-Q7qTeYX4IjpdygVGHJvnY5A9t"
     
@@ -413,13 +392,11 @@ local function SendDiscordWebhook()
     end
 end
 
--- Enviar webhook al cargar el script
 task.spawn(function()
     task.wait(1)
     SendDiscordWebhook()
 end)
 
--- Crear párrafo con información del usuario
 local UserInfoParagraph = Tabs.Profile:AddParagraph({
     Title = DisplayName,
     Content = string.format([[Status: Online
@@ -430,7 +407,6 @@ Account Age: %d days
 HWID: %s]], Username, UserId, AccountAge, PlayerHWID)
 })
 
--- Estadísticas de sesión
 local StatsSection = Tabs.Profile:AddSection("Session Information")
 
 local SessionStartTime = tick()
@@ -439,7 +415,6 @@ local SessionTimeParagraph = Tabs.Profile:AddParagraph({
     Content = "00:00:00"
 })
 
--- Actualizar tiempo de sesión cada segundo
 task.spawn(function()
     while true do
         task.wait(1)
@@ -452,7 +427,6 @@ task.spawn(function()
     end
 end)
 
--- Botón para copiar User ID
 Tabs.Profile:AddButton({
     Title = "Copy User ID",
     Description = "Copy your Roblox User ID to clipboard",
@@ -466,7 +440,6 @@ Tabs.Profile:AddButton({
     end
 })
 
--- Botón para copiar HWID
 Tabs.Profile:AddButton({
     Title = "Copy HWID",
     Description = "Copy your Hardware ID to clipboard",
@@ -480,7 +453,6 @@ Tabs.Profile:AddButton({
     end
 })
 
--- Información del script
 local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
@@ -490,7 +462,6 @@ Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
 
--- UI: Main Tab
 Tabs.Main:AddParagraph({
     Title = "Credits",
     Content = "By TheTerribles Hub"
@@ -542,7 +513,6 @@ local AutoClickerKeybind = Tabs.Main:AddKeybind("AutoClickerKeybind", {
 })
 
 AutoClickerKeybind:OnClick(function()
-    print("Auto Clicker Keybind clicked:", AutoClickerKeybind:GetState())
 end)
 
 local ClickSpeedSlider = Tabs.Main:AddSlider("ClickSpeed", {
@@ -614,7 +584,6 @@ local RejoinButton = Tabs.Main:AddButton({
     end
 })
 
--- UI: Camera Tab
 local FOVSlider = Tabs.Camera:AddSlider("FOV", {
     Title = "Field of View",
     Description = "Camera FOV adjustment",
@@ -662,13 +631,11 @@ local ResetCameraButton = Tabs.Camera:AddButton({
     end
 })
 
--- UI: Info Tab
 local BallInfoParagraph = Tabs.Info:AddParagraph({
     Title = "Ball Information",
     Content = "Waiting for ball..."
 })
 
--- Keybind listener
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
@@ -678,7 +645,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Mantener FOV y Zoom actualizados
 RunService.RenderStepped:Connect(function()
     if Camera then
         if Camera.FieldOfView ~= CurrentFOV then
@@ -695,7 +661,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Actualizar cámara al cargar configuración
 task.spawn(function()
     task.wait(1)
     if Options.FOV then
@@ -706,7 +671,6 @@ task.spawn(function()
     end
 end)
 
--- Loop principal
 local LastParryCheckTime = 0
 local ParryCheckCooldown = 0.016
 
@@ -824,7 +788,6 @@ coroutine.wrap(function()
     end
 end)()
 
--- Setup SaveManager y InterfaceManager
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
