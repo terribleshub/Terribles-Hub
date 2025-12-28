@@ -1,7 +1,6 @@
 -- HWID Verification System
 local AllowedHWIDs = {
     "F0B9FAE1-1D50-4E72-9CC9-7A7231659339",
-    "f0b9fae1-1d50-4e72-9cc9-7a7231659339", -- Versión en minúsculas por si acaso
 }
 
 local function GetHWID()
@@ -45,9 +44,7 @@ print("━━━━━━━━━━━━━━━━━━━━━━━━�
 
 if not IsHWIDAllowed(PlayerHWID) then
     KickPlayer([[
-╔═══════════════════════════════════════╗
-║     ACCESS DENIED - HWID NOT FOUND    ║
-╚═══════════════════════════════════════╝
+     ACCESS DENIED - HWID NOT FOUND    
 
 Your HWID: ]] .. PlayerHWID .. [[
 
@@ -55,8 +52,7 @@ Your HWID: ]] .. PlayerHWID .. [[
 This script requires authentication.
 
 To purchase access, please contact:
-🔹 Terribles Hub Discord Server
-🔹 https://discord.gg/terribleshub
+🔹 Terribles Hub
 
 Thank you for your interest!
 ]])
