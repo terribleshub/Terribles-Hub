@@ -1,4 +1,4 @@
--- Sistema HWID by Terribles Hub (Versión con mejor debugging)
+-- Sistema HWID by Terribles Hub (Versión compatible con todos los executors)
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
@@ -6,6 +6,61 @@ local LP = Players.LocalPlayer
 -- URLs del repositorio
 local hwidListUrl = "https://raw.githubusercontent.com/terribleshub/Terribles-Hub/main/hwid.json"
 local loaderUrl = "https://raw.githubusercontent.com/terribleshub/Terribles-Hub/main/loader"
+
+-- Función universal para HTTP GET (compatible con todos los executors)
+local function HttpGet(url)
+    -- Intentar game:HttpGet() primero (algunos executors)
+    if game.HttpGet then
+        local success, result = pcall(function()
+            return game:HttpGet(url)
+        end)
+        if success then return result end
+    end
+    
+    -- Intentar HttpService:GetAsync() (método estándar)
+    local success, result = pcall(function()
+        return HttpService:GetAsync(url)
+    end)
+    if success then return result end
+    
+    -- Intentar request() para executors modernos
+    if request then
+        local success, result = pcall(function()
+            local response = request({
+                Url = url,
+                Method = "GET"
+            })
+            return response.Body
+        end)
+        if success then return result end
+    end
+    
+    -- Intentar syn.request() para Synapse
+    if syn and syn.request then
+        local success, result = pcall(function()
+            local response = syn.request({
+                Url = url,
+                Method = "GET"
+            })
+            return response.Body
+        end)
+        if success then return result end
+    end
+    
+    -- Intentar http_request() para otros executors
+    if http_request then
+        local success, result = pcall(function()
+            local response = http_request({
+                Url = url,
+                Method = "GET"
+            })
+            return response.Body
+        end)
+        if success then return result end
+    end
+    
+    error("No HTTP method available in this executor")
+end
 
 -- Función para obtener HWID del usuario
 local function GetHWID()
@@ -31,7 +86,7 @@ local function CheckHWID()
     
     -- Descargar lista de HWIDs desde GitHub
     local success, response = pcall(function()
-        return game:HttpGet(hwidListUrl)
+        return HttpGet(hwidListUrl)
     end)
     
     if not success then
@@ -124,7 +179,7 @@ local function LoadMainScript()
     print("URL:", loaderUrl)
     
     local success, scriptContent = pcall(function()
-        return game:HttpGet(loaderUrl)
+        return HttpGet(loaderUrl)
     end)
     
     if not success then
