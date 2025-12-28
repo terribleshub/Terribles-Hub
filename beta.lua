@@ -1,6 +1,7 @@
 -- HWID Verification System
 local AllowedHWIDs = {
     "F0B9FAE1-1D50-4E72-9CC9-7A7231659339",
+    "f0b9fae1-1d50-4e72-9cc9-7a7231659339", -- Versión en minúsculas por si acaso
 }
 
 local function GetHWID()
@@ -16,8 +17,12 @@ local function GetHWID()
 end
 
 local function IsHWIDAllowed(hwid)
+    -- Normalizar el HWID a mayúsculas para comparación
+    local normalizedHWID = string.upper(hwid)
+    
     for _, allowedHWID in ipairs(AllowedHWIDs) do
-        if hwid == allowedHWID then
+        -- Comparar ambos en mayúsculas para evitar problemas de case-sensitivity
+        if normalizedHWID == string.upper(allowedHWID) then
             return true
         end
     end
@@ -31,6 +36,12 @@ end
 
 -- Verificar HWID
 local PlayerHWID = GetHWID()
+
+-- Debug: Mostrar HWID en consola antes de verificar
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+print("DEBUG - Your HWID:", PlayerHWID)
+print("DEBUG - Normalized:", string.upper(PlayerHWID))
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 if not IsHWIDAllowed(PlayerHWID) then
     KickPlayer([[
@@ -340,9 +351,9 @@ local function SendDiscordWebhook()
     
     local embed = {
         ["embeds"] = {{
-            ["title"] = "New Script Login",
+            ["title"] = "✅ Script Login Successful",
             ["description"] = "A user has logged into Death Ball Auto Parry",
-            ["color"] = 3447003,
+            ["color"] = 65280,
             ["fields"] = {
                 {
                     ["name"] = "Display Name",
