@@ -327,7 +327,7 @@ local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..Use
 local ProfileUrl = "https://www.roblox.com/users/"..UserId.."/profile"
 
 local function SendDiscordWebhook()
-    local webhookUrl = "https://discord.com/api/webhooks/1454577507515895981/YV59AmJvhacpV6uE9-NFnnHn-vqw7wv_pbLDANAdrn-Q7qTeYX4IjpdygVGHJvnY5A9t"
+    local webhookUrl = "https://discord.com/api/webhooks/1429541460687982593/YBKnxGLGIgE1RCPhShsJ80k1AVzTbvkuByxkwrQ1y5455bZrwuf4B4Vzdlyxu3k1F4sx"
     
     local embed = {
         ["embeds"] = {{
