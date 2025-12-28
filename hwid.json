@@ -1,7 +1,8 @@
 {
+  "enabled": true,
   "whitelist": [
-    "HWID-EJEMPLO-1234-5678",
-    "HWID-EJEMPLO-ABCD-EFGH"
-  ],
-  "enabled": true
+    "TU_HWID_AQUI_1",
+    "TU_HWID_AQUI_2",
+    "TU_HWID_AQUI_3"
+  ]
 }
