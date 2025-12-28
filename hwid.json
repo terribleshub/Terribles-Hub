@@ -1,8 +1,6 @@
 {
   "enabled": true,
   "whitelist": [
-    "TU_HWID_AQUI_1",
-    "TU_HWID_AQUI_2",
-    "TU_HWID_AQUI_3"
+    "eb03cc40-84bf-11f0-80c7-806e6f6e6963"
   ]
 }
