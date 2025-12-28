@@ -1,9 +1,6 @@
 -- HWID Verification System
 local AllowedHWIDs = {
-    "eb03cc40-84bf-11f0-80c7-806e6f6e6963", -- Tu HWID
-    -- Agrega más HWIDs aquí cuando sea necesario
-    -- "hwid-ejemplo-1",
-    -- "hwid-ejemplo-2",
+    "F0B9FAE1-1D50-4E72-9CC9-7A7231659339",
 }
 
 local function GetHWID()
