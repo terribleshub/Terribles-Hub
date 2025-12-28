@@ -212,17 +212,19 @@ local function Parry()
 end
 
 local function IsBallComingTowardsPlayer(ballPos, lastPos, playerPos)
-    if not lastPos then return true end
+    if not lastPos then return false end  -- Cambiado a false para ser más estricto
     
     local ballToPlayer = (playerPos - ballPos).Unit
     local ballMovement = (ballPos - lastPos).Unit
     
     local dotProduct = ballToPlayer:Dot(ballMovement)
     
-    return dotProduct > 0.1
+    -- Aumentado el threshold para ser más estricto
+    return dotProduct > 0.3
 end
 
 local function IsBallMoving(currentSpeed)
+    -- La pelota debe tener al menos 0.3 de velocidad para considerarse en movimiento
     if currentSpeed < MinimumSpeedThreshold then
         BallStillCounter = BallStillCounter + 1
         if BallStillCounter >= BallStillCheckFrames then
@@ -233,7 +235,8 @@ local function IsBallMoving(currentSpeed)
         return true
     end
     
-    return BallStillCounter < BallStillCheckFrames
+    -- Si la velocidad es menor a 0.3, siempre retornar false
+    return currentSpeed >= MinimumSpeedThreshold and BallStillCounter < BallStillCheckFrames
 end
 
 local function CalculateOptimalParryDistance(speed, horizontalDistance, ballHeight, playerPosY, ballPosY)
@@ -771,9 +774,17 @@ coroutine.wrap(function()
             
             local currentTime = tick()
             if AutoParryEnabled then
+                -- IMPORTANTE: Solo hacer parry si cumple TODAS estas condiciones:
+                -- 1. La pelota debe estar en movimiento (velocidad >= 0.3)
+                -- 2. La pelota debe estar CERCA (dentro de la distancia óptima)
+                -- 3. La pelota debe venir hacia el jugador
+                -- 4. La altura debe ser correcta
+                -- 5. La pelota no debe ser blanca
                 local shouldParryNow = isBallActuallyMoving
-                    and distance3D <= optimalDistance 
-                    and isComingTowardsPlayer 
+                    and rawSpeed >= MinimumSpeedThreshold  -- Velocidad mínima de 0.3
+                    and distance3D <= optimalDistance      -- Debe estar dentro del rango calculado
+                    and horizontalDistance <= optimalDistance  -- Verificación adicional de distancia horizontal
+                    and isComingTowardsPlayer              -- Debe venir hacia ti
                     and heightDifference <= heightTolerance
                     and not isBallWhite
                 
