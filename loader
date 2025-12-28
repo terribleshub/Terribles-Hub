@@ -1,6 +1,43 @@
--- Death Ball Auto Parry v2.0 - Loader Corregido
+-- Death Ball Auto Parry v2.0 - Loader Corregido (Compatible con todos los executors)
+local HttpService = game:GetService("HttpService")
+
+-- Función universal para HTTP GET
+local function HttpGet(url)
+    if game.HttpGet then
+        local s, r = pcall(function() return game:HttpGet(url) end)
+        if s then return r end
+    end
+    
+    local s, r = pcall(function() return HttpService:GetAsync(url) end)
+    if s then return r end
+    
+    if request then
+        local s, r = pcall(function()
+            return request({Url = url, Method = "GET"}).Body
+        end)
+        if s then return r end
+    end
+    
+    if syn and syn.request then
+        local s, r = pcall(function()
+            return syn.request({Url = url, Method = "GET"}).Body
+        end)
+        if s then return r end
+    end
+    
+    if http_request then
+        local s, r = pcall(function()
+            return http_request({Url = url, Method = "GET"}).Body
+        end)
+        if s then return r end
+    end
+    
+    error("No HTTP method available")
+end
+
+-- Cargar librerías con la función universal
 local success, Fluent = pcall(function()
-    return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+    return loadstring(HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 end)
 
 if not success then
@@ -8,8 +45,8 @@ if not success then
     return
 end
 
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+local SaveManager = loadstring(HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 local Window = Fluent:CreateWindow({
     Title = "Terribles Hub - Death Ball",
@@ -51,23 +88,19 @@ local LastParryTime = 0
 local ParryCooldown = 0.000001
 local IsParrying = false
 
--- Variables para detección de movimiento
 local MinimumSpeedThreshold = 0.3
 local BallStillCheckFrames = 2
 local BallStillCounter = 0
 
--- Variables del Anti-AFK
 local AntiAFKEnabled = false
 local LastMovementTime = tick()
 local LastJumpTime = 0
 
--- Variables del Auto Clicker
 local AutoClickerEnabled = false
 local ClickSpeed = 1000
 local LastClickTime = 0
 local AutoClickerKeybindEnum = Enum.KeyCode.E
 
--- Variables: FOV y Zoom
 local DefaultFOV = 70
 local DefaultMaxZoom = 128
 local CurrentFOV = DefaultFOV
@@ -82,7 +115,6 @@ local SpeedHeightThresholds = {
 
 local MainLoop = nil
 
--- Funciones: FOV y Zoom
 local function UpdateFOV(value)
     CurrentFOV = value
     if Camera then
@@ -106,7 +138,6 @@ local function ResetCamera()
     end
 end
 
--- Funciones del Auto Parry
 local function IsInGame()
     local success, result = pcall(function()
         local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
@@ -280,7 +311,6 @@ end
 -- UI: Profile Tab
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
 
--- Obtener información del jugador
 local UserId = LP.UserId
 local Username = LP.Name
 local DisplayName = LP.DisplayName
@@ -288,7 +318,6 @@ local AccountAge = LP.AccountAge
 local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=150&height=150&format=png"
 local ProfileUrl = "https://www.roblox.com/users/"..UserId.."/profile"
 
--- Enviar webhook a Discord (con manejo de errores mejorado)
 local function SendDiscordWebhook()
     task.spawn(function()
         pcall(function()
@@ -300,83 +329,32 @@ local function SendDiscordWebhook()
                     ["description"] = "A user has logged into Death Ball Auto Parry",
                     ["color"] = 3447003,
                     ["fields"] = {
-                        {
-                            ["name"] = "Display Name",
-                            ["value"] = DisplayName,
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "Username",
-                            ["value"] = "@" .. Username,
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "User ID",
-                            ["value"] = tostring(UserId),
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "Account Age",
-                            ["value"] = AccountAge .. " days",
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "Executor",
-                            ["value"] = identifyexecutor and identifyexecutor() or "Unknown",
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "Game",
-                            ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
-                            ["inline"] = false
-                        }
+                        {["name"] = "Display Name", ["value"] = DisplayName, ["inline"] = true},
+                        {["name"] = "Username", ["value"] = "@" .. Username, ["inline"] = true},
+                        {["name"] = "User ID", ["value"] = tostring(UserId), ["inline"] = true},
+                        {["name"] = "Account Age", ["value"] = AccountAge .. " days", ["inline"] = true},
+                        {["name"] = "Executor", ["value"] = identifyexecutor and identifyexecutor() or "Unknown", ["inline"] = true},
+                        {["name"] = "Game", ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name, ["inline"] = false}
                     },
-                    ["thumbnail"] = {
-                        ["url"] = AvatarUrl
-                    },
-                    ["footer"] = {
-                        ["text"] = "Death Ball Auto Parry v2.0 | " .. os.date("%Y-%m-%d %H:%M:%S")
-                    }
+                    ["thumbnail"] = {["url"] = AvatarUrl},
+                    ["footer"] = {["text"] = "Death Ball Auto Parry v2.0 | " .. os.date("%Y-%m-%d %H:%M:%S")}
                 }}
             }
             
             local http = game:GetService("HttpService")
             if request then
-                request({
-                    Url = webhookUrl,
-                    Method = "POST",
-                    Headers = {
-                        ["Content-Type"] = "application/json"
-                    },
-                    Body = http:JSONEncode(embed)
-                })
+                request({Url = webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = http:JSONEncode(embed)})
             elseif syn and syn.request then
-                syn.request({
-                    Url = webhookUrl,
-                    Method = "POST",
-                    Headers = {
-                        ["Content-Type"] = "application/json"
-                    },
-                    Body = http:JSONEncode(embed)
-                })
+                syn.request({Url = webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = http:JSONEncode(embed)})
             elseif http_request then
-                http_request({
-                    Url = webhookUrl,
-                    Method = "POST",
-                    Headers = {
-                        ["Content-Type"] = "application/json"
-                    },
-                    Body = http:JSONEncode(embed)
-                })
+                http_request({Url = webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = http:JSONEncode(embed)})
             end
         end)
     end)
 end
 
--- Enviar webhook al cargar el script
 SendDiscordWebhook()
 
--- Crear párrafo con información del usuario
 local UserInfoParagraph = Tabs.Profile:AddParagraph({
     Title = DisplayName,
     Content = string.format([[Status: Online
@@ -386,7 +364,6 @@ User ID: %d
 Account Age: %d days]], Username, UserId, AccountAge)
 })
 
--- Estadísticas de sesión
 local StatsSection = Tabs.Profile:AddSection("Session Information")
 
 local SessionStartTime = tick()
@@ -395,7 +372,6 @@ local SessionTimeParagraph = Tabs.Profile:AddParagraph({
     Content = "00:00:00"
 })
 
--- Actualizar tiempo de sesión cada segundo
 task.spawn(function()
     while true do
         task.wait(1)
@@ -408,21 +384,15 @@ task.spawn(function()
     end
 end)
 
--- Botón para copiar User ID
 Tabs.Profile:AddButton({
     Title = "Copy User ID",
     Description = "Copy your Roblox User ID to clipboard",
     Callback = function()
         setclipboard(tostring(UserId))
-        Fluent:Notify({
-            Title = "Copied",
-            Content = "User ID copied to clipboard",
-            Duration = 2
-        })
+        Fluent:Notify({Title = "Copied", Content = "User ID copied to clipboard", Duration = 2})
     end
 })
 
--- Información del script
 local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
@@ -432,16 +402,9 @@ Creator: TheTerribles Hub]]
 })
 
 -- UI: Main Tab
-Tabs.Main:AddParagraph({
-    Title = "Credits",
-    Content = "By TheTerribles Hub"
-})
+Tabs.Main:AddParagraph({Title = "Credits", Content = "By TheTerribles Hub"})
 
-local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", {
-    Title = "Auto Parry",
-    Default = true
-})
-
+local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", {Title = "Auto Parry", Default = true})
 AutoParryToggle:OnChanged(function()
     AutoParryEnabled = Options.AutoParryToggle.Value
 end)
@@ -449,53 +412,30 @@ end)
 local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
     Title = "Ping Compensator",
     Description = "Adjust for your ping",
-    Default = 10,
-    Min = 1,
-    Max = 25,
-    Rounding = 0,
-    Callback = function(Value)
-        PingCompensation = Value
-    end
+    Default = 10, Min = 1, Max = 25, Rounding = 0,
+    Callback = function(Value) PingCompensation = Value end
 })
 
 local AutoClickerSection = Tabs.Main:AddSection("Auto Clicker")
 
-local AutoClickerToggle = Tabs.Main:AddToggle("AutoClickerToggle", {
-    Title = "Auto Clicker",
-    Default = false
-})
-
+local AutoClickerToggle = Tabs.Main:AddToggle("AutoClickerToggle", {Title = "Auto Clicker", Default = false})
 AutoClickerToggle:OnChanged(function()
     AutoClickerEnabled = Options.AutoClickerToggle.Value
 end)
 
 local AutoClickerKeybind = Tabs.Main:AddKeybind("AutoClickerKeybind", {
-    Title = "Auto Clicker Keybind",
-    Mode = "Toggle",
-    Default = "E",
+    Title = "Auto Clicker Keybind", Mode = "Toggle", Default = "E",
     Callback = function(Value)
         AutoClickerEnabled = Value
         Options.AutoClickerToggle:SetValue(Value)
     end,
-    ChangedCallback = function(New)
-        AutoClickerKeybindEnum = New
-    end
+    ChangedCallback = function(New) AutoClickerKeybindEnum = New end
 })
 
-AutoClickerKeybind:OnClick(function()
-    print("Auto Clicker Keybind clicked:", AutoClickerKeybind:GetState())
-end)
-
 local ClickSpeedSlider = Tabs.Main:AddSlider("ClickSpeed", {
-    Title = "Click Speed",
-    Description = "Clicks per second",
-    Default = 1000,
-    Min = 100,
-    Max = 2000,
-    Rounding = 0,
-    Callback = function(Value)
-        ClickSpeed = Value
-    end
+    Title = "Click Speed", Description = "Clicks per second",
+    Default = 1000, Min = 100, Max = 2000, Rounding = 0,
+    Callback = function(Value) ClickSpeed = Value end
 })
 
 local AntiAFKSection = Tabs.Main:AddSection("Anti-AFK")
@@ -505,101 +445,55 @@ local AntiAFKToggle = Tabs.Main:AddToggle("AntiAFKToggle", {
     Description = "Prevents being kicked for inactivity",
     Default = false
 })
-
 AntiAFKToggle:OnChanged(function()
     AntiAFKEnabled = Options.AntiAFKToggle.Value
 end)
 
-local DestroyButton = Tabs.Main:AddButton({
+Tabs.Main:AddButton({
     Title = "Destroy Script",
     Description = "Remove the script completely",
     Callback = function()
-        Fluent:Notify({
-            Title = "Script Destroyed",
-            Content = "The script has been removed",
-            Duration = 2
-        })
-        
-        if MainLoop then
-            MainLoop = false
-        end
-        
+        Fluent:Notify({Title = "Script Destroyed", Content = "The script has been removed", Duration = 2})
+        if MainLoop then MainLoop = false end
         AutoParryEnabled = false
         AutoClickerEnabled = false
         ResetCamera()
-        
         task.wait(0.5)
-        
         Fluent:Destroy()
     end
 })
 
-local RejoinButton = Tabs.Main:AddButton({
+Tabs.Main:AddButton({
     Title = "Rejoin Server",
     Description = "Restart and rejoin the game",
     Callback = function()
-        Fluent:Notify({
-            Title = "Rejoining...",
-            Content = "Restarting the game",
-            Duration = 2
-        })
-        
+        Fluent:Notify({Title = "Rejoining...", Content = "Restarting the game", Duration = 2})
         task.wait(0.5)
-        
-        local TeleportService = game:GetService("TeleportService")
-        local Players = game:GetService("Players")
-        local PlaceId = game.PlaceId
-        local Player = Players.LocalPlayer
-        
-        TeleportService:Teleport(PlaceId, Player)
+        game:GetService("TeleportService"):Teleport(game.PlaceId, LP)
     end
 })
 
 -- UI: Camera Tab
 local FOVSlider = Tabs.Camera:AddSlider("FOV", {
-    Title = "Field of View",
-    Description = "Camera FOV adjustment",
-    Default = 70,
-    Min = 30,
-    Max = 120,
-    Rounding = 0,
-    Callback = function(Value)
-        UpdateFOV(Value)
-    end
+    Title = "Field of View", Description = "Camera FOV adjustment",
+    Default = 70, Min = 30, Max = 120, Rounding = 0,
+    Callback = function(Value) UpdateFOV(Value) end
 })
-
-FOVSlider:OnChanged(function(Value)
-    UpdateFOV(Value)
-end)
 
 local MaxZoomSlider = Tabs.Camera:AddSlider("MaxZoom", {
-    Title = "Max Zoom Distance",
-    Description = "Camera zoom limit",
-    Default = 128,
-    Min = 10,
-    Max = 500,
-    Rounding = 0,
-    Callback = function(Value)
-        UpdateMaxZoom(Value)
-    end
+    Title = "Max Zoom Distance", Description = "Camera zoom limit",
+    Default = 128, Min = 10, Max = 500, Rounding = 0,
+    Callback = function(Value) UpdateMaxZoom(Value) end
 })
 
-MaxZoomSlider:OnChanged(function(Value)
-    UpdateMaxZoom(Value)
-end)
-
-local ResetCameraButton = Tabs.Camera:AddButton({
+Tabs.Camera:AddButton({
     Title = "Reset Camera Settings",
     Description = "Restore default values",
     Callback = function()
         Options.FOV:SetValue(DefaultFOV)
         Options.MaxZoom:SetValue(DefaultMaxZoom)
         ResetCamera()
-        Fluent:Notify({
-            Title = "Camera Reset",
-            Content = "Camera settings restored to default",
-            Duration = 2
-        })
+        Fluent:Notify({Title = "Camera Reset", Content = "Camera settings restored to default", Duration = 2})
     end
 })
 
@@ -609,17 +503,14 @@ local BallInfoParagraph = Tabs.Info:AddParagraph({
     Content = "Waiting for ball..."
 })
 
--- Keybind listener
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    
     if input.KeyCode == AutoClickerKeybindEnum then
         AutoClickerEnabled = not AutoClickerEnabled
         Options.AutoClickerToggle:SetValue(AutoClickerEnabled)
     end
 end)
 
--- Mantener FOV y Zoom actualizados
 RunService.RenderStepped:Connect(function()
     if Camera then
         if Camera.FieldOfView ~= CurrentFOV then
@@ -636,18 +527,12 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Actualizar cámara al cargar configuración
 task.spawn(function()
     task.wait(1)
-    if Options.FOV then
-        UpdateFOV(Options.FOV.Value)
-    end
-    if Options.MaxZoom then
-        UpdateMaxZoom(Options.MaxZoom.Value)
-    end
+    if Options.FOV then UpdateFOV(Options.FOV.Value) end
+    if Options.MaxZoom then UpdateMaxZoom(Options.MaxZoom.Value) end
 end)
 
--- Loop principal
 local LastParryCheckTime = 0
 local ParryCheckCooldown = 0.016
 
@@ -691,9 +576,7 @@ coroutine.wrap(function()
             local BallPos = BallShadow.Position
             local PlayerPos = LP.Character.PrimaryPart.Position
             
-            if not LastBallPos then 
-                LastBallPos = BallPos 
-            end
+            if not LastBallPos then LastBallPos = BallPos end
             
             local currentShadowSize = BallShadow.Size.X
             local ballHeight = CalculateBallHeight(currentShadowSize)
@@ -765,7 +648,6 @@ coroutine.wrap(function()
     end
 end)()
 
--- Setup SaveManager y InterfaceManager
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
