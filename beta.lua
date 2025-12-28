@@ -1,3 +1,61 @@
+-- HWID Verification System
+local AllowedHWIDs = {
+    "eb03cc40-84bf-11f0-80c7-806e6f6e6963", -- Tu HWID
+    -- Agrega más HWIDs aquí cuando sea necesario
+    -- "hwid-ejemplo-1",
+    -- "hwid-ejemplo-2",
+}
+
+local function GetHWID()
+    local success, hwid = pcall(function()
+        return game:GetService("RbxAnalyticsService"):GetClientId()
+    end)
+    
+    if success then
+        return hwid
+    else
+        return "UNKNOWN"
+    end
+end
+
+local function IsHWIDAllowed(hwid)
+    for _, allowedHWID in ipairs(AllowedHWIDs) do
+        if hwid == allowedHWID then
+            return true
+        end
+    end
+    return false
+end
+
+local function KickPlayer(reason)
+    local Players = game:GetService("Players")
+    Players.LocalPlayer:Kick(reason)
+end
+
+-- Verificar HWID
+local PlayerHWID = GetHWID()
+
+if not IsHWIDAllowed(PlayerHWID) then
+    KickPlayer([[
+╔═══════════════════════════════════════╗
+║     ACCESS DENIED - HWID NOT FOUND    ║
+╚═══════════════════════════════════════╝
+
+Your HWID: ]] .. PlayerHWID .. [[
+
+
+This script requires authentication.
+
+To purchase access, please contact:
+🔹 Terribles Hub Discord Server
+🔹 https://discord.gg/terribleshub
+
+Thank you for your interest!
+]])
+    return
+end
+
+-- Si el HWID es válido, continuar con el script normal
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
@@ -268,7 +326,7 @@ local function AntiAFK()
     end
 end
 
--- UI: Profile Tab (NUEVO)
+-- UI: Profile Tab
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
 
 -- Obtener información del jugador
@@ -302,6 +360,11 @@ local function SendDiscordWebhook()
                 {
                     ["name"] = "User ID",
                     ["value"] = tostring(UserId),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "HWID",
+                    ["value"] = PlayerHWID,
                     ["inline"] = true
                 },
                 {
@@ -359,7 +422,8 @@ local UserInfoParagraph = Tabs.Profile:AddParagraph({
 
 Username: @%s
 User ID: %d
-Account Age: %d days]], Username, UserId, AccountAge)
+Account Age: %d days
+HWID: %s]], Username, UserId, AccountAge, PlayerHWID)
 })
 
 -- Estadísticas de sesión
@@ -398,13 +462,28 @@ Tabs.Profile:AddButton({
     end
 })
 
+-- Botón para copiar HWID
+Tabs.Profile:AddButton({
+    Title = "Copy HWID",
+    Description = "Copy your Hardware ID to clipboard",
+    Callback = function()
+        setclipboard(PlayerHWID)
+        Fluent:Notify({
+            Title = "Copied",
+            Content = "HWID copied to clipboard",
+            Duration = 2
+        })
+    end
+})
+
 -- Información del script
 local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
     Content = [[Version: 2.0
-Creator: TheTerribles Hub]]
+Creator: TheTerribles Hub
+Status: Licensed ✓]]
 })
 
 -- UI: Main Tab
@@ -623,8 +702,6 @@ task.spawn(function()
     end
 end)
 
--- Modificar la función Parry para contar (ELIMINADO - ya no se necesita contador)
-
 -- Loop principal
 local LastParryCheckTime = 0
 local ParryCheckCooldown = 0.016
@@ -759,7 +836,7 @@ Window:SelectTab(1)
 
 Fluent:Notify({
     Title = "Terribles Hub",
-    Content = "Welcome " .. DisplayName .. "!",
+    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated",
     Duration = 5
 })
 
