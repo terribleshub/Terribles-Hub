@@ -1,4 +1,13 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- Death Ball Auto Parry v2.0 - Loader Corregido
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+end)
+
+if not success then
+    game.Players.LocalPlayer:Kick("❌ Failed to load Fluent UI library.\n\nError: " .. tostring(Fluent) .. "\n\nPlease try again or contact support.")
+    return
+end
+
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
@@ -268,7 +277,7 @@ local function AntiAFK()
     end
 end
 
--- UI: Profile Tab (NUEVO)
+-- UI: Profile Tab
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
 
 -- Obtener información del jugador
@@ -279,78 +288,93 @@ local AccountAge = LP.AccountAge
 local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=150&height=150&format=png"
 local ProfileUrl = "https://www.roblox.com/users/"..UserId.."/profile"
 
--- Enviar webhook a Discord
+-- Enviar webhook a Discord (con manejo de errores mejorado)
 local function SendDiscordWebhook()
-    local webhookUrl = "https://discord.com/api/webhooks/1454577507515895981/YV59AmJvhacpV6uE9-NFnnHn-vqw7wv_pbLDANAdrn-Q7qTeYX4IjpdygVGHJvnY5A9t"
-    
-    local embed = {
-        ["embeds"] = {{
-            ["title"] = "New Script Login",
-            ["description"] = "A user has logged into Death Ball Auto Parry",
-            ["color"] = 3447003,
-            ["fields"] = {
-                {
-                    ["name"] = "Display Name",
-                    ["value"] = DisplayName,
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "Username",
-                    ["value"] = "@" .. Username,
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "User ID",
-                    ["value"] = tostring(UserId),
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "Account Age",
-                    ["value"] = AccountAge .. " days",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "Executor",
-                    ["value"] = identifyexecutor and identifyexecutor() or "Unknown",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "Game",
-                    ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
-                    ["inline"] = false
-                }
-            },
-            ["thumbnail"] = {
-                ["url"] = AvatarUrl
-            },
-            ["footer"] = {
-                ["text"] = "Death Ball Auto Parry v2.0 | " .. os.date("%Y-%m-%d %H:%M:%S")
+    task.spawn(function()
+        pcall(function()
+            local webhookUrl = "https://discord.com/api/webhooks/1454577507515895981/YV59AmJvhacpV6uE9-NFnnHn-vqw7wv_pbLDANAdrn-Q7qTeYX4IjpdygVGHJvnY5A9t"
+            
+            local embed = {
+                ["embeds"] = {{
+                    ["title"] = "New Script Login",
+                    ["description"] = "A user has logged into Death Ball Auto Parry",
+                    ["color"] = 3447003,
+                    ["fields"] = {
+                        {
+                            ["name"] = "Display Name",
+                            ["value"] = DisplayName,
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "Username",
+                            ["value"] = "@" .. Username,
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "User ID",
+                            ["value"] = tostring(UserId),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "Account Age",
+                            ["value"] = AccountAge .. " days",
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "Executor",
+                            ["value"] = identifyexecutor and identifyexecutor() or "Unknown",
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "Game",
+                            ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+                            ["inline"] = false
+                        }
+                    },
+                    ["thumbnail"] = {
+                        ["url"] = AvatarUrl
+                    },
+                    ["footer"] = {
+                        ["text"] = "Death Ball Auto Parry v2.0 | " .. os.date("%Y-%m-%d %H:%M:%S")
+                    }
+                }}
             }
-        }}
-    }
-    
-    local success, result = pcall(function()
-        local http = game:GetService("HttpService")
-        local response = request({
-            Url = webhookUrl,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = http:JSONEncode(embed)
-        })
+            
+            local http = game:GetService("HttpService")
+            if request then
+                request({
+                    Url = webhookUrl,
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+                    Body = http:JSONEncode(embed)
+                })
+            elseif syn and syn.request then
+                syn.request({
+                    Url = webhookUrl,
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+                    Body = http:JSONEncode(embed)
+                })
+            elseif http_request then
+                http_request({
+                    Url = webhookUrl,
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+                    Body = http:JSONEncode(embed)
+                })
+            end
+        end)
     end)
-    
-    if not success then
-        warn("Failed to send webhook:", result)
-    end
 end
 
 -- Enviar webhook al cargar el script
-task.spawn(function()
-    task.wait(1)
-    SendDiscordWebhook()
-end)
+SendDiscordWebhook()
 
 -- Crear párrafo con información del usuario
 local UserInfoParagraph = Tabs.Profile:AddParagraph({
@@ -622,8 +646,6 @@ task.spawn(function()
         UpdateMaxZoom(Options.MaxZoom.Value)
     end
 end)
-
--- Modificar la función Parry para contar (ELIMINADO - ya no se necesita contador)
 
 -- Loop principal
 local LastParryCheckTime = 0
