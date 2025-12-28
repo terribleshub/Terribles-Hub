@@ -1,5 +1,5 @@
 local AllowedHWIDs = {
-    "F0B9FAE1-1D50-4E72-9CC9-7A72316593393", -- Owner
+    "f0b9fae1-1d50-4e72-9cc9-7a72316593393", -- Owner
 }
 
 local function GetHWID()
