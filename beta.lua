@@ -423,26 +423,8 @@ Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
 
--- PARRY STATS SECTION
-local ParryStatsSection = Tabs.Profile:AddSection("Parry Statistics")
-
-local ParryStatsParagraph = Tabs.Profile:AddParagraph({
-    Title = "Parry Stats",
-    Content = "Total: 0 | Static: 0 | Dynamic: 0 | Hybrid: 0"
-})
-
-task.spawn(function()
-    while true do
-        task.wait(2)
-        ParryStatsParagraph:SetDesc(string.format(
-            "Total: %d | Static: %d | Dynamic: %d | Hybrid: %d",
-            ParryStats.TotalParries,
-            ParryStats.StaticParries,
-            ParryStats.DynamicParries,
-            ParryStats.HybridParries
-        ))
-    end
-end)
+-- PARRY STATS SECTION (REMOVED - Now automatic)
+-- Parry stats tracking continues in background but UI section removed
 
 Tabs.Main:AddParagraph({
     Title = "Credits",
@@ -458,60 +440,15 @@ AutoParryToggle:OnChanged(function()
     AutoParryEnabled = Options.AutoParryToggle.Value
 end)
 
--- PARRY MODE SELECTOR
-local ParryModeDropdown = Tabs.Main:AddDropdown("ParryMode", {
-    Title = "Parry Mode",
-    Values = {"Hybrid", "Static", "Dynamic"},
-    Multi = false,
-    Default = 1,
-})
-
-ParryModeDropdown:OnChanged(function(Value)
-    ParryMode = Value
-    Fluent:Notify({
-        Title = "Mode Changed",
-        Content = "Parry mode set to: " .. Value,
-        Duration = 2
-    })
-end)
-
-local StaticSettingsSection = Tabs.Main:AddSection("Static System (Original)")
-
-local StaticPingSlider = Tabs.Main:AddSlider("StaticPing", {
-    Title = "Static Ping Compensator",
-    Description = "Manual ping adjustment (1-25ms)",
+local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
+    Title = "Ping Compensator",
+    Description = "Adjust for your ping",
     Default = 10,
     Min = 1,
     Max = 25,
     Rounding = 0,
     Callback = function(Value)
         StaticPingCompensation = Value
-    end
-})
-
-local DynamicSettingsSection = Tabs.Main:AddSection("Dynamic System (Velocity-Based)")
-
-local BaseDistanceSlider = Tabs.Main:AddSlider("BaseDistance", {
-    Title = "Base Distance",
-    Description = "Starting distance for dynamic calc",
-    Default = 15,
-    Min = 10,
-    Max = 30,
-    Rounding = 1,
-    Callback = function(Value)
-        BaseDistance = Value
-    end
-})
-
-local DynamicFactorSlider = Tabs.Main:AddSlider("DynamicFactor", {
-    Title = "Dynamic Factor",
-    Description = "Velocity multiplier (0.1-1.0)",
-    Default = 0.3,
-    Min = 0.1,
-    Max = 1.0,
-    Rounding = 1,
-    Callback = function(Value)
-        DynamicPingFactor = Value
     end
 })
 
@@ -786,18 +723,18 @@ coroutine.wrap(function()
             -- CÁLCULO HÍBRIDO DE DISTANCIA ÓPTIMA
             local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
             
-            -- ACTUALIZAR UI
+            -- ACTUALIZAR UI (simplified)
             BallInfoParagraph:SetDesc(string.format(
-                "Vel: %.2f | Height: %.1f | Dist3D: %.1f | FlatDist: %.1f", 
-                velocity, ballHeight, distance3D, flatDistance
+                "Speed: %.2f | Height: %.1f | Distance: %.1f", 
+                velocity, ballHeight, distance3D
             ))
             
             SystemInfoParagraph:SetDesc(string.format(
-                "Mode: %s | Optimal Distance: %.1f | Height Diff: %.1f | In Air: %s",
-                ParryMode,
+                "Optimal Distance: %.1f | Height Diff: %.1f | In Air: %s | Ping Comp: %d",
                 optimalDistance,
                 heightDifference,
-                (LP.Character:FindFirstChild("Humanoid") and LP.Character.Humanoid.FloorMaterial == Enum.Material.Air) and "Yes" or "No"
+                (LP.Character:FindFirstChild("Humanoid") and LP.Character.Humanoid.FloorMaterial == Enum.Material.Air) and "Yes" or "No",
+                StaticPingCompensation
             ))
             
             -- SISTEMA HÍBRIDO DE PARRY
