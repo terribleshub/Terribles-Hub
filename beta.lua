@@ -69,7 +69,6 @@ local Tabs = {
     Profile = Window:AddTab({ Title = "Profile", Icon = "user" }),
     Main = Window:AddTab({ Title = "Auto Parry", Icon = "shield" }),
     Camera = Window:AddTab({ Title = "Camera", Icon = "camera" }),
-    Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Exploits = Window:AddTab({ Title = "Exploits", Icon = "code" }),
     Info = Window:AddTab({ Title = "Ball Info", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -87,22 +86,14 @@ local WhiteColor = Color3.new(1, 1, 1)
 local LastBallPos
 local AutoParryEnabled = true
 
--- HYBRID SYSTEM VARIABLES (All automatic except ping compensator)
 local StaticPingCompensation = 10
-local DynamicPingFactor = 0.3  -- Fixed automatic value
-local BaseDistance = 15  -- Fixed automatic value
+local DynamicPingFactor = 0.3
+local BaseDistance = 15
 
 local LastParryTime = 0
 local ParryCooldown = 0.01
 local IsParrying = false
 local LastFrameTime = 0
-
--- BALL VISUALIZATION SYSTEM
-local VisualBallEnabled = false
-local VisualBall = nil
-local ParryRangeEnabled = false
-local ParryRangeCircle = nil
-local AccentColor = Color3.fromRGB(180, 80, 255)
 
 local AntiAFKEnabled = false
 local LastMovementTime = tick()
@@ -121,7 +112,6 @@ local Camera = workspace.CurrentCamera
 
 local MainLoop = nil
 
--- HYBRID PARRY STATS (tracking only, no mode distinction)
 local ParryStats = {
     TotalParries = 0,
     SuccessfulParries = 0
@@ -183,153 +173,6 @@ local function CalculateBallHeight(shadowSize)
     return math.min(estimatedHeight + 3, 100)
 end
 
--- VISUAL BALL SYSTEM
-local function CreateVisualBall(shadowPosition, shadowSize)
-    if not shadowPosition or not VisualBallEnabled then return nil end
-    
-    -- Remove old ball if exists
-    if VisualBall then
-        VisualBall:Destroy()
-        VisualBall = nil
-    end
-    
-    -- Calculate ball height
-    local ballHeight = CalculateBallHeight(shadowSize)
-    local ballYPosition = shadowPosition.Y + ballHeight
-    local ballPosition = Vector3.new(shadowPosition.X, ballYPosition, shadowPosition.Z)
-    
-    -- Create visual ball
-    VisualBall = Instance.new("Part")
-    VisualBall.Name = "VisualBallTracker"
-    VisualBall.Anchored = true
-    VisualBall.CanCollide = false
-    VisualBall.Material = Enum.Material.Neon
-    VisualBall.Color = AccentColor
-    VisualBall.Transparency = 0.3
-    VisualBall.Size = Vector3.new(4, 4, 4)
-    VisualBall.Shape = Enum.PartType.Ball
-    VisualBall.Position = ballPosition
-    VisualBall.Parent = workspace
-    
-    -- Add highlight
-    local highlight = Instance.new("Highlight")
-    highlight.FillColor = AccentColor
-    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.FillTransparency = 0.3
-    highlight.OutlineTransparency = 0.1
-    highlight.Parent = VisualBall
-    
-    return VisualBall, ballPosition
-end
-
-local function UpdateVisualBall(shadowPosition, shadowSize)
-    if not shadowPosition or not VisualBallEnabled then 
-        if VisualBall then
-            VisualBall:Destroy()
-            VisualBall = nil
-        end
-        return nil 
-    end
-    
-    if not VisualBall then
-        return CreateVisualBall(shadowPosition, shadowSize)
-    else
-        local ballHeight = CalculateBallHeight(shadowSize)
-        local ballYPosition = shadowPosition.Y + ballHeight
-        local ballPosition = Vector3.new(shadowPosition.X, ballYPosition, shadowPosition.Z)
-        
-        VisualBall.Position = ballPosition
-        return ballPosition
-    end
-end
-
-local function RemoveVisualBall()
-    if VisualBall then
-        VisualBall:Destroy()
-        VisualBall = nil
-    end
-end
-
--- PARRY RANGE CIRCLE SYSTEM
-local function CreateParryRangeCircle(playerPosition, radius)
-    if not playerPosition or not ParryRangeEnabled then return nil end
-    
-    -- Remove old circle if exists
-    if ParryRangeCircle then
-        ParryRangeCircle:Destroy()
-        ParryRangeCircle = nil
-    end
-    
-    -- Create 3D torus/ring using multiple parts
-    local circleModel = Instance.new("Model")
-    circleModel.Name = "ParryRangeCircle"
-    circleModel.Parent = workspace
-    
-    local segments = 60 -- Number of segments for smooth circle
-    local tubeRadius = 0.3 -- Thickness of the ring
-    
-    for i = 1, segments do
-        local angle = (i / segments) * (2 * math.pi)
-        local nextAngle = ((i + 1) / segments) * (2 * math.pi)
-        
-        local x = math.cos(angle) * radius
-        local z = math.sin(angle) * radius
-        
-        local nextX = math.cos(nextAngle) * radius
-        local nextZ = math.sin(nextAngle) * radius
-        
-        local segmentPos = Vector3.new(
-            playerPosition.X + (x + nextX) / 2,
-            playerPosition.Y + 0.2, -- Slightly above ground
-            playerPosition.Z + (z + nextZ) / 2
-        )
-        
-        local segment = Instance.new("Part")
-        segment.Name = "Segment"
-        segment.Anchored = true
-        segment.CanCollide = false
-        segment.Material = Enum.Material.Neon
-        segment.Color = AccentColor
-        segment.Transparency = 0.4
-        segment.Size = Vector3.new(tubeRadius, tubeRadius, radius / segments * 2)
-        segment.CFrame = CFrame.new(segmentPos, Vector3.new(playerPosition.X + nextX, playerPosition.Y + 0.2, playerPosition.Z + nextZ))
-        segment.Parent = circleModel
-    end
-    
-    ParryRangeCircle = circleModel
-    return circleModel
-end
-
-local function UpdateParryRangeCircle(playerPosition, radius)
-    if not playerPosition or not ParryRangeEnabled then 
-        if ParryRangeCircle then
-            ParryRangeCircle:Destroy()
-            ParryRangeCircle = nil
-        end
-        return nil 
-    end
-    
-    if not ParryRangeCircle then
-        return CreateParryRangeCircle(playerPosition, radius)
-    else
-        -- Update position of existing circle
-        for _, segment in pairs(ParryRangeCircle:GetChildren()) do
-            if segment:IsA("Part") then
-                local offset = segment.Position - ParryRangeCircle:GetChildren()[1].Position
-                segment.Position = playerPosition + offset + Vector3.new(0, 0.2, 0)
-            end
-        end
-        return ParryRangeCircle
-    end
-end
-
-local function RemoveParryRangeCircle()
-    if ParryRangeCircle then
-        ParryRangeCircle:Destroy()
-        ParryRangeCircle = nil
-    end
-end
-
 local function Parry()
     if IsParrying then return end
     
@@ -350,9 +193,7 @@ local function Parry()
     IsParrying = false
 end
 
--- AUTOMATIC HYBRID DISTANCE CALCULATION (no mode selection needed)
 local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
-    -- Static calculation
     local staticDistance
     if StaticPingCompensation <= 5 then
         staticDistance = 15 + ((StaticPingCompensation - 1) / 4) * 10
@@ -366,11 +207,9 @@ local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
         staticDistance = 70 + ((StaticPingCompensation - 20) / 5) * 10
     end
     
-    -- Dynamic calculation (automatic)
     local ping = LP:GetNetworkPing()
     local dynamicDistance = BaseDistance + (velocity * ping * DynamicPingFactor)
     
-    -- Always use hybrid mode (60% dynamic + 40% static)
     local hybridDistance = (dynamicDistance * 0.6) + (staticDistance * 0.4)
     return hybridDistance
 end
@@ -428,43 +267,48 @@ local function SendDiscordWebhook()
     
     local embed = {
         ["embeds"] = {{
-            ["title"] = "✅ Script Login Successful",
-            ["description"] = "A user has logged into Death Ball Auto Parry",
-            ["color"] = 65280,
+            ["title"] = "🎮 Death Ball Auto Parry - Session Initiated",
+            ["description"] = "A licensed user has successfully authenticated and started a new session.",
+            ["color"] = 0,
             ["fields"] = {
                 {
-                    ["name"] = "Display Name",
-                    ["value"] = DisplayName,
+                    ["name"] = "👤 Display Name",
+                    ["value"] = "```" .. DisplayName .. "```",
                     ["inline"] = true
                 },
                 {
-                    ["name"] = "Username",
-                    ["value"] = "@" .. Username,
+                    ["name"] = "📝 Username",
+                    ["value"] = "```@" .. Username .. "```",
                     ["inline"] = true
                 },
                 {
-                    ["name"] = "User ID",
-                    ["value"] = tostring(UserId),
+                    ["name"] = "🔢 User ID",
+                    ["value"] = "```" .. tostring(UserId) .. "```",
                     ["inline"] = true
                 },
                 {
-                    ["name"] = "HWID",
-                    ["value"] = PlayerHWID,
+                    ["name"] = "🔐 Hardware ID",
+                    ["value"] = "```" .. PlayerHWID .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "📅 Account Age",
+                    ["value"] = "```" .. AccountAge .. " days```",
                     ["inline"] = true
                 },
                 {
-                    ["name"] = "Account Age",
-                    ["value"] = AccountAge .. " days",
+                    ["name"] = "⚙️ Executor",
+                    ["value"] = "```" .. (identifyexecutor and identifyexecutor() or "Unknown") .. "```",
                     ["inline"] = true
                 },
                 {
-                    ["name"] = "Executor",
-                    ["value"] = identifyexecutor and identifyexecutor() or "Unknown",
-                    ["inline"] = true
+                    ["name"] = "🎯 Game",
+                    ["value"] = "```" .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name .. "```",
+                    ["inline"] = false
                 },
                 {
-                    ["name"] = "Game",
-                    ["value"] = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+                    ["name"] = "🌐 Server",
+                    ["value"] = "```Job ID: " .. game.JobId .. "```",
                     ["inline"] = false
                 }
             },
@@ -472,8 +316,10 @@ local function SendDiscordWebhook()
                 ["url"] = AvatarUrl
             },
             ["footer"] = {
-                ["text"] = "Death Ball Auto Parry v3.0 | " .. os.date("%Y-%m-%d %H:%M:%S")
-            }
+                ["text"] = "Terribles Hub Security System",
+                ["icon_url"] = "https://cdn.discordapp.com/emojis/1234567890123456789.png"
+            },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
         }}
     }
     
@@ -563,9 +409,6 @@ Tabs.Profile:AddParagraph({
 Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
-
--- PARRY STATS SECTION (REMOVED - Now automatic)
--- Parry stats tracking continues in background but UI section removed
 
 Tabs.Main:AddParagraph({
     Title = "Credits",
@@ -746,7 +589,6 @@ local SystemInfoParagraph = Tabs.Info:AddParagraph({
     Content = "Distance: Calculating..."
 })
 
--- EXPLOITS TAB
 local ExploitsSection = Tabs.Exploits:AddSection("Additional Features")
 
 Tabs.Exploits:AddParagraph({
@@ -755,57 +597,6 @@ Tabs.Exploits:AddParagraph({
 
 Stay tuned for updates!]]
 })
-
--- VISUALS TAB
-local VisualsSection = Tabs.Visuals:AddSection("Visual Features")
-
-local VisualBallToggle = Tabs.Visuals:AddToggle("VisualBallToggle", {
-    Title = "Ball Tracker",
-    Description = "Show visual ball position indicator",
-    Default = false
-})
-
-VisualBallToggle:OnChanged(function()
-    VisualBallEnabled = Options.VisualBallToggle.Value
-    if not VisualBallEnabled then
-        RemoveVisualBall()
-        Fluent:Notify({
-            Title = "Ball Tracker",
-            Content = "Visual ball tracker disabled",
-            Duration = 2
-        })
-    else
-        Fluent:Notify({
-            Title = "Ball Tracker",
-            Content = "Visual ball tracker enabled",
-            Duration = 2
-        })
-    end
-end)
-
-local ParryRangeToggle = Tabs.Visuals:AddToggle("ParryRangeToggle", {
-    Title = "Parry Range Circle",
-    Description = "Show 3D circle indicating parry range",
-    Default = false
-})
-
-ParryRangeToggle:OnChanged(function()
-    ParryRangeEnabled = Options.ParryRangeToggle.Value
-    if not ParryRangeEnabled then
-        RemoveParryRangeCircle()
-        Fluent:Notify({
-            Title = "Parry Range",
-            Content = "Parry range circle disabled",
-            Duration = 2
-        })
-    else
-        Fluent:Notify({
-            Title = "Parry Range",
-            Content = "Parry range circle enabled",
-            Duration = 2
-        })
-    end
-end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -844,7 +635,6 @@ end)
 
 MainLoop = true
 
--- MAIN HYBRID AUTO PARRY LOOP
 coroutine.wrap(function()
     while MainLoop do
         local dt = tick() - LastFrameTime
@@ -893,39 +683,32 @@ coroutine.wrap(function()
             local ballHeight = CalculateBallHeight(currentShadowSize)
             local ballPosY = BallPos.Y + ballHeight
             
-            -- CÁLCULO DE VELOCIDAD (del segundo código)
             local moveDir = (BallPos - LastBallPos)
             local velocity = moveDir.Magnitude / (dt > 0 and dt or 0.016)
             
-            -- POSICIÓN REAL 3D
             local realBallPos = Vector3.new(BallPos.X, ballPosY, BallPos.Z)
             local distance3D = (PlayerPos - realBallPos).Magnitude
             
-            -- DISTANCIA HORIZONTAL (del segundo código)
             local flatDistance = (Vector3.new(PlayerPos.X, 0, PlayerPos.Z) - Vector3.new(BallPos.X, 0, BallPos.Z)).Magnitude
             
-            -- COLOR DE LA BOLA
             local ballColor = WhiteColor
             if RealBall then
                 ballColor = GetBallColor()
             end
             local isBallWhite = ballColor == WhiteColor
             
-            -- VERIFICACIÓN DE ALTURA (del primer código)
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             local heightTolerance = 20
             
             if LP.Character:FindFirstChild("Humanoid") then
                 local humanoid = LP.Character.Humanoid
                 if humanoid.FloorMaterial == Enum.Material.Air then
-                    heightTolerance = 35 -- Mayor tolerancia en el aire
+                    heightTolerance = 35
                 end
             end
             
-            -- CÁLCULO HÍBRIDO DE DISTANCIA ÓPTIMA
             local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
             
-            -- ACTUALIZAR UI (simplified)
             BallInfoParagraph:SetDesc(string.format(
                 "Speed: %.2f | Height: %.1f | Distance: %.1f", 
                 velocity, ballHeight, distance3D
@@ -939,23 +722,13 @@ coroutine.wrap(function()
                 StaticPingCompensation
             ))
             
-            -- UPDATE VISUAL BALL
-            UpdateVisualBall(BallPos, currentShadowSize)
-            
-            -- UPDATE PARRY RANGE CIRCLE with real optimal distance
-            if LP.Character and LP.Character.PrimaryPart then
-                UpdateParryRangeCircle(LP.Character.PrimaryPart.Position, optimalDistance)
-            end
-            
-            -- SISTEMA HÍBRIDO DE PARRY
             if AutoParryEnabled then
                 local currentTime = tick()
                 
-                -- CONDICIONES COMBINADAS DE AMBOS CÓDIGOS
                 local shouldParryHybrid = not isBallWhite
-                    and distance3D <= optimalDistance  -- Usa distancia 3D
-                    and flatDistance <= optimalDistance  -- También verifica distancia horizontal
-                    and heightDifference <= heightTolerance  -- Verifica altura
+                    and distance3D <= optimalDistance
+                    and flatDistance <= optimalDistance
+                    and heightDifference <= heightTolerance
                     and currentTime - LastParryTime > ParryCooldown
                 
                 if shouldParryHybrid then
