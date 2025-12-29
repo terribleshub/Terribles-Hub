@@ -1,4 +1,4 @@
-local AllowedHWIDs = {
+ local AllowedHWIDs = {
     "F0B9FAE1-1D50-4E72-9CC9-7A7231659339", -- Owner
     "C65D92C8-1C22-4629-AE24-7B4803701734", -- Jery
     "27FB119D-21E9-4124-8E49-5BDD9F02CD87", -- Miguel
@@ -256,10 +256,23 @@ end
 
 local function IsInGame()
     local success, result = pcall(function()
-        local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
-        return healthBar.Visible == true
+        local healthBar = LP.PlayerGui:FindFirstChild("HUD")
+        if healthBar then
+            healthBar = healthBar:FindFirstChild("HolderBottom")
+            if healthBar then
+                healthBar = healthBar:FindFirstChild("HealthBar")
+                if healthBar then
+                    return healthBar.Visible == true
+                end
+            end
+        end
+        return false
     end)
-    return success and result
+    
+    if success then
+        return result
+    end
+    return false
 end
 
 local function WalkToPosition(targetPos)
@@ -289,6 +302,13 @@ local function AutoReady()
     
     if IsInGame() then
         IsWalkingToEntry = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            local humanoid = LP.Character.Humanoid
+            local rootPart = LP.Character.HumanoidRootPart
+            if rootPart then
+                humanoid:MoveTo(rootPart.Position)
+            end
+        end
         return
     end
     
