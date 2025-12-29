@@ -69,6 +69,7 @@ local Tabs = {
     Profile = Window:AddTab({ Title = "Profile", Icon = "user" }),
     Main = Window:AddTab({ Title = "Auto Parry", Icon = "shield" }),
     Camera = Window:AddTab({ Title = "Camera", Icon = "camera" }),
+    Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Exploits = Window:AddTab({ Title = "Exploits", Icon = "code" }),
     Info = Window:AddTab({ Title = "Ball Info", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -95,6 +96,13 @@ local LastParryTime = 0
 local ParryCooldown = 0.01
 local IsParrying = false
 local LastFrameTime = 0
+
+-- BALL VISUALIZATION SYSTEM
+local VisualBallEnabled = false
+local VisualBall = nil
+local ParryRangeEnabled = false
+local ParryRangeCircle = nil
+local AccentColor = Color3.fromRGB(180, 80, 255)
 
 local AntiAFKEnabled = false
 local LastMovementTime = tick()
@@ -173,6 +181,153 @@ local function CalculateBallHeight(shadowSize)
     local estimatedHeight = shadowIncrease * heightMultiplier
     
     return math.min(estimatedHeight + 3, 100)
+end
+
+-- VISUAL BALL SYSTEM
+local function CreateVisualBall(shadowPosition, shadowSize)
+    if not shadowPosition or not VisualBallEnabled then return nil end
+    
+    -- Remove old ball if exists
+    if VisualBall then
+        VisualBall:Destroy()
+        VisualBall = nil
+    end
+    
+    -- Calculate ball height
+    local ballHeight = CalculateBallHeight(shadowSize)
+    local ballYPosition = shadowPosition.Y + ballHeight
+    local ballPosition = Vector3.new(shadowPosition.X, ballYPosition, shadowPosition.Z)
+    
+    -- Create visual ball
+    VisualBall = Instance.new("Part")
+    VisualBall.Name = "VisualBallTracker"
+    VisualBall.Anchored = true
+    VisualBall.CanCollide = false
+    VisualBall.Material = Enum.Material.Neon
+    VisualBall.Color = AccentColor
+    VisualBall.Transparency = 0.3
+    VisualBall.Size = Vector3.new(4, 4, 4)
+    VisualBall.Shape = Enum.PartType.Ball
+    VisualBall.Position = ballPosition
+    VisualBall.Parent = workspace
+    
+    -- Add highlight
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = AccentColor
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.3
+    highlight.OutlineTransparency = 0.1
+    highlight.Parent = VisualBall
+    
+    return VisualBall, ballPosition
+end
+
+local function UpdateVisualBall(shadowPosition, shadowSize)
+    if not shadowPosition or not VisualBallEnabled then 
+        if VisualBall then
+            VisualBall:Destroy()
+            VisualBall = nil
+        end
+        return nil 
+    end
+    
+    if not VisualBall then
+        return CreateVisualBall(shadowPosition, shadowSize)
+    else
+        local ballHeight = CalculateBallHeight(shadowSize)
+        local ballYPosition = shadowPosition.Y + ballHeight
+        local ballPosition = Vector3.new(shadowPosition.X, ballYPosition, shadowPosition.Z)
+        
+        VisualBall.Position = ballPosition
+        return ballPosition
+    end
+end
+
+local function RemoveVisualBall()
+    if VisualBall then
+        VisualBall:Destroy()
+        VisualBall = nil
+    end
+end
+
+-- PARRY RANGE CIRCLE SYSTEM
+local function CreateParryRangeCircle(playerPosition, radius)
+    if not playerPosition or not ParryRangeEnabled then return nil end
+    
+    -- Remove old circle if exists
+    if ParryRangeCircle then
+        ParryRangeCircle:Destroy()
+        ParryRangeCircle = nil
+    end
+    
+    -- Create 3D torus/ring using multiple parts
+    local circleModel = Instance.new("Model")
+    circleModel.Name = "ParryRangeCircle"
+    circleModel.Parent = workspace
+    
+    local segments = 60 -- Number of segments for smooth circle
+    local tubeRadius = 0.3 -- Thickness of the ring
+    
+    for i = 1, segments do
+        local angle = (i / segments) * (2 * math.pi)
+        local nextAngle = ((i + 1) / segments) * (2 * math.pi)
+        
+        local x = math.cos(angle) * radius
+        local z = math.sin(angle) * radius
+        
+        local nextX = math.cos(nextAngle) * radius
+        local nextZ = math.sin(nextAngle) * radius
+        
+        local segmentPos = Vector3.new(
+            playerPosition.X + (x + nextX) / 2,
+            playerPosition.Y + 0.2, -- Slightly above ground
+            playerPosition.Z + (z + nextZ) / 2
+        )
+        
+        local segment = Instance.new("Part")
+        segment.Name = "Segment"
+        segment.Anchored = true
+        segment.CanCollide = false
+        segment.Material = Enum.Material.Neon
+        segment.Color = AccentColor
+        segment.Transparency = 0.4
+        segment.Size = Vector3.new(tubeRadius, tubeRadius, radius / segments * 2)
+        segment.CFrame = CFrame.new(segmentPos, Vector3.new(playerPosition.X + nextX, playerPosition.Y + 0.2, playerPosition.Z + nextZ))
+        segment.Parent = circleModel
+    end
+    
+    ParryRangeCircle = circleModel
+    return circleModel
+end
+
+local function UpdateParryRangeCircle(playerPosition, radius)
+    if not playerPosition or not ParryRangeEnabled then 
+        if ParryRangeCircle then
+            ParryRangeCircle:Destroy()
+            ParryRangeCircle = nil
+        end
+        return nil 
+    end
+    
+    if not ParryRangeCircle then
+        return CreateParryRangeCircle(playerPosition, radius)
+    else
+        -- Update position of existing circle
+        for _, segment in pairs(ParryRangeCircle:GetChildren()) do
+            if segment:IsA("Part") then
+                local offset = segment.Position - ParryRangeCircle:GetChildren()[1].Position
+                segment.Position = playerPosition + offset + Vector3.new(0, 0.2, 0)
+            end
+        end
+        return ParryRangeCircle
+    end
+end
+
+local function RemoveParryRangeCircle()
+    if ParryRangeCircle then
+        ParryRangeCircle:Destroy()
+        ParryRangeCircle = nil
+    end
 end
 
 local function Parry()
@@ -601,6 +756,57 @@ Tabs.Exploits:AddParagraph({
 Stay tuned for updates!]]
 })
 
+-- VISUALS TAB
+local VisualsSection = Tabs.Visuals:AddSection("Visual Features")
+
+local VisualBallToggle = Tabs.Visuals:AddToggle("VisualBallToggle", {
+    Title = "Ball Tracker",
+    Description = "Show visual ball position indicator",
+    Default = false
+})
+
+VisualBallToggle:OnChanged(function()
+    VisualBallEnabled = Options.VisualBallToggle.Value
+    if not VisualBallEnabled then
+        RemoveVisualBall()
+        Fluent:Notify({
+            Title = "Ball Tracker",
+            Content = "Visual ball tracker disabled",
+            Duration = 2
+        })
+    else
+        Fluent:Notify({
+            Title = "Ball Tracker",
+            Content = "Visual ball tracker enabled",
+            Duration = 2
+        })
+    end
+end)
+
+local ParryRangeToggle = Tabs.Visuals:AddToggle("ParryRangeToggle", {
+    Title = "Parry Range Circle",
+    Description = "Show 3D circle indicating parry range",
+    Default = false
+})
+
+ParryRangeToggle:OnChanged(function()
+    ParryRangeEnabled = Options.ParryRangeToggle.Value
+    if not ParryRangeEnabled then
+        RemoveParryRangeCircle()
+        Fluent:Notify({
+            Title = "Parry Range",
+            Content = "Parry range circle disabled",
+            Duration = 2
+        })
+    else
+        Fluent:Notify({
+            Title = "Parry Range",
+            Content = "Parry range circle enabled",
+            Duration = 2
+        })
+    end
+end)
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
@@ -732,6 +938,14 @@ coroutine.wrap(function()
                 (LP.Character:FindFirstChild("Humanoid") and LP.Character.Humanoid.FloorMaterial == Enum.Material.Air) and "Yes" or "No",
                 StaticPingCompensation
             ))
+            
+            -- UPDATE VISUAL BALL
+            UpdateVisualBall(BallPos, currentShadowSize)
+            
+            -- UPDATE PARRY RANGE CIRCLE with real optimal distance
+            if LP.Character and LP.Character.PrimaryPart then
+                UpdateParryRangeCircle(LP.Character.PrimaryPart.Position, optimalDistance)
+            end
             
             -- SISTEMA HÍBRIDO DE PARRY
             if AutoParryEnabled then
