@@ -96,31 +96,8 @@ local IsParrying = false
 local LastFrameTime = 0
 
 local AntiAFKEnabled = false
-
-local function SetupAntiAFK()
-    if not AntiAFKEnabled then return end
-    
-    local Players = game:GetService("Players")
-    local GC = getconnections or get_signal_cons
-    
-    if GC then
-        for i,v in pairs(GC(Players.LocalPlayer.Idled)) do
-            if v["Disable"] then
-                v["Disable"](v)
-            elseif v["Disconnect"] then
-                v["Disconnect"](v)
-            end
-        end
-    else
-        local VirtualUser = cloneref and cloneref(game:GetService("VirtualUser")) or game:GetService("VirtualUser")
-        Players.LocalPlayer.Idled:Connect(function()
-            if AntiAFKEnabled then
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new())
-            end
-        end)
-    end
-end
+local LastMovementTime = tick()
+local LastJumpTime = 0
 
 local AutoClickerEnabled = false
 local ClickSpeed = 1000
@@ -248,6 +225,31 @@ local function UltraAutoClicker()
         task.wait(0.000001)
         VirtualInputManager:SendKeyEvent(false, "F", false, game)
         LastClickTime = currentTime
+    end
+end
+
+local function AntiAFK()
+    if not AntiAFKEnabled then return end
+    
+    local currentTime = tick()
+    
+    if currentTime - LastMovementTime >= math.random(10, 15) then
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftShift, false, game)
+        task.wait(0.001)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftShift, false, game)
+        
+        LastMovementTime = currentTime
+    end
+    
+    if currentTime - LastJumpTime >= math.random(20, 30) then
+        if Camera then
+            local currentCFrame = Camera.CFrame
+            Camera.CFrame = currentCFrame * CFrame.Angles(0, math.rad(0.1), 0)
+            task.wait(0.001)
+            Camera.CFrame = currentCFrame
+        end
+        
+        LastJumpTime = currentTime
     end
 end
 
@@ -483,9 +485,6 @@ local AntiAFKToggle = Tabs.Main:AddToggle("AntiAFKToggle", {
 
 AntiAFKToggle:OnChanged(function()
     AntiAFKEnabled = Options.AntiAFKToggle.Value
-    if AntiAFKEnabled then
-        SetupAntiAFK()
-    end
 end)
 
 local DestroyButton = Tabs.Main:AddButton({
@@ -642,6 +641,8 @@ coroutine.wrap(function()
         LastFrameTime = tick()
         
         task.wait()
+        
+        AntiAFK()
         
         if AutoClickerEnabled then
             UltraAutoClicker()
