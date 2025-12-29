@@ -70,6 +70,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Auto Parry", Icon = "shield" }),
     Camera = Window:AddTab({ Title = "Camera", Icon = "camera" }),
     Info = Window:AddTab({ Title = "Ball Info", Icon = "info" }),
+    Changelog = Window:AddTab({ Title = "Changelog", Icon = "git-branch" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
@@ -85,11 +86,10 @@ local WhiteColor = Color3.new(1, 1, 1)
 local LastBallPos
 local AutoParryEnabled = true
 
--- HYBRID SYSTEM VARIABLES
-local ParryMode = "Hybrid" -- "Static", "Dynamic", "Hybrid"
+-- HYBRID SYSTEM VARIABLES (All automatic except ping compensator)
 local StaticPingCompensation = 10
-local DynamicPingFactor = 0.3
-local BaseDistance = 15
+local DynamicPingFactor = 0.3  -- Fixed automatic value
+local BaseDistance = 15  -- Fixed automatic value
 
 local LastParryTime = 0
 local ParryCooldown = 0.01
@@ -113,13 +113,10 @@ local Camera = workspace.CurrentCamera
 
 local MainLoop = nil
 
--- HYBRID PARRY STATS
+-- HYBRID PARRY STATS (tracking only, no mode distinction)
 local ParryStats = {
     TotalParries = 0,
-    SuccessfulParries = 0,
-    StaticParries = 0,
-    DynamicParries = 0,
-    HybridParries = 0
+    SuccessfulParries = 0
 }
 
 local function UpdateFOV(value)
@@ -198,11 +195,10 @@ local function Parry()
     IsParrying = false
 end
 
--- SISTEMA HÍBRIDO DE CÁLCULO DE DISTANCIA
+-- AUTOMATIC HYBRID DISTANCE CALCULATION (no mode selection needed)
 local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
+    -- Static calculation
     local staticDistance
-    
-    -- Cálculo estático mejorado (del primer código)
     if StaticPingCompensation <= 5 then
         staticDistance = 15 + ((StaticPingCompensation - 1) / 4) * 10
     elseif StaticPingCompensation <= 10 then
@@ -215,23 +211,13 @@ local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
         staticDistance = 70 + ((StaticPingCompensation - 20) / 5) * 10
     end
     
-    -- Cálculo dinámico (del segundo código)
+    -- Dynamic calculation (automatic)
     local ping = LP:GetNetworkPing()
     local dynamicDistance = BaseDistance + (velocity * ping * DynamicPingFactor)
     
-    -- Sistema híbrido que elige el mejor según el modo
-    if ParryMode == "Static" then
-        ParryStats.StaticParries = ParryStats.StaticParries + 1
-        return staticDistance
-    elseif ParryMode == "Dynamic" then
-        ParryStats.DynamicParries = ParryStats.DynamicParries + 1
-        return dynamicDistance
-    else -- Hybrid
-        -- Promedio ponderado con preferencia al dinámico
-        local hybridDistance = (dynamicDistance * 0.6) + (staticDistance * 0.4)
-        ParryStats.HybridParries = ParryStats.HybridParries + 1
-        return hybridDistance
-    end
+    -- Always use hybrid mode (60% dynamic + 40% static)
+    local hybridDistance = (dynamicDistance * 0.6) + (staticDistance * 0.4)
+    return hybridDistance
 end
 
 local function UltraAutoClicker()
@@ -602,7 +588,98 @@ local BallInfoParagraph = Tabs.Info:AddParagraph({
 
 local SystemInfoParagraph = Tabs.Info:AddParagraph({
     Title = "System Information",
-    Content = "Mode: Hybrid | Distance: Calculating..."
+    Content = "Distance: Calculating..."
+})
+
+-- CHANGELOG TAB
+local ChangelogSection = Tabs.Changelog:AddSection("Update History")
+
+Tabs.Changelog:AddParagraph({
+    Title = "How to View Updates",
+    Content = [[Visit the GitHub repository to see the latest changes and updates.
+
+Repository: github.com/terribleshub/Terribles-Hub
+
+All version changes, bug fixes, and new features are documented there.]]
+})
+
+local ChangelogContent = Tabs.Changelog:AddParagraph({
+    Title = "Latest Updates",
+    Content = "Loading changelog from GitHub..."
+})
+
+-- Function to fetch changelog from GitHub
+local function FetchGitHubChangelog()
+    task.spawn(function()
+        local success, result = pcall(function()
+            local HttpService = game:GetService("HttpService")
+            -- Terribles Hub GitHub Repository
+            local githubApiUrl = "https://api.github.com/repos/terribleshub/Terribles-Hub/releases"
+            
+            local response = game:HttpGet(githubApiUrl)
+            local data = HttpService:JSONDecode(response)
+            
+            if data and #data > 0 then
+                local changelogText = ""
+                -- Get the 3 most recent releases
+                for i = 1, math.min(3, #data) do
+                    local release = data[i]
+                    changelogText = changelogText .. string.format(
+                        "━━━━━━━━━━━━━━━━━━━━\n📦 Version %s\n📅 %s\n\n%s\n\n",
+                        release.tag_name or "Unknown",
+                        release.published_at and release.published_at:sub(1, 10) or "Unknown Date",
+                        release.body or "No description available"
+                    )
+                end
+                
+                ChangelogContent:SetTitle("Recent Updates (Last 3)")
+                ChangelogContent:SetDesc(changelogText)
+            else
+                ChangelogContent:SetDesc("No releases found on GitHub")
+            end
+        end)
+        
+        if not success then
+            ChangelogContent:SetDesc([[Could not fetch changelog from GitHub.
+
+Please check:
+1. GitHub repository is public
+2. API URL is correct
+3. Internet connection is stable
+
+Manual check: Visit your GitHub repository]])
+        end
+    end)
+end
+
+-- Fetch changelog on load
+FetchGitHubChangelog()
+
+Tabs.Changelog:AddButton({
+    Title = "Refresh Changelog",
+    Description = "Fetch latest updates from GitHub",
+    Callback = function()
+        ChangelogContent:SetDesc("Loading changelog from GitHub...")
+        FetchGitHubChangelog()
+        Fluent:Notify({
+            Title = "Refreshing",
+            Content = "Fetching latest updates...",
+            Duration = 2
+        })
+    end
+})
+
+Tabs.Changelog:AddButton({
+    Title = "Open GitHub Repository",
+    Description = "View full changelog and source code",
+    Callback = function()
+        setclipboard("https://github.com/terribleshub/Terribles-Hub")
+        Fluent:Notify({
+            Title = "Copied",
+            Content = "GitHub URL copied to clipboard",
+            Duration = 3
+        })
+    end
 })
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
