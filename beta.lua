@@ -68,9 +68,9 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Profile = Window:AddTab({ Title = "Profile", Icon = "user" }),
     Main = Window:AddTab({ Title = "Auto Parry", Icon = "shield" }),
+    Exploits = Window:AddTab({ Title = "Exploits", Icon = "zap" }),
     Camera = Window:AddTab({ Title = "Camera", Icon = "camera" }),
     Info = Window:AddTab({ Title = "Ball Info", Icon = "info" }),
-    Changelog = Window:AddTab({ Title = "Changelog", Icon = "git-branch" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
@@ -591,95 +591,14 @@ local SystemInfoParagraph = Tabs.Info:AddParagraph({
     Content = "Distance: Calculating..."
 })
 
--- CHANGELOG TAB
-local ChangelogSection = Tabs.Changelog:AddSection("Update History")
+-- EXPLOITS TAB
+local ExploitsSection = Tabs.Exploits:AddSection("Additional Features")
 
-Tabs.Changelog:AddParagraph({
-    Title = "How to View Updates",
-    Content = [[Visit the GitHub repository to see the latest changes and updates.
+Tabs.Exploits:AddParagraph({
+    Title = "Coming Soon",
+    Content = [[More exploits and features are being developed.
 
-Repository: github.com/terribleshub/Terribles-Hub
-
-All version changes, bug fixes, and new features are documented there.]]
-})
-
-local ChangelogContent = Tabs.Changelog:AddParagraph({
-    Title = "Latest Updates",
-    Content = "Loading changelog from GitHub..."
-})
-
--- Function to fetch changelog from GitHub
-local function FetchGitHubChangelog()
-    task.spawn(function()
-        local success, result = pcall(function()
-            local HttpService = game:GetService("HttpService")
-            -- Terribles Hub GitHub Repository
-            local githubApiUrl = "https://api.github.com/repos/terribleshub/Terribles-Hub/releases"
-            
-            local response = game:HttpGet(githubApiUrl)
-            local data = HttpService:JSONDecode(response)
-            
-            if data and #data > 0 then
-                local changelogText = ""
-                -- Get the 3 most recent releases
-                for i = 1, math.min(3, #data) do
-                    local release = data[i]
-                    changelogText = changelogText .. string.format(
-                        "━━━━━━━━━━━━━━━━━━━━\n📦 Version %s\n📅 %s\n\n%s\n\n",
-                        release.tag_name or "Unknown",
-                        release.published_at and release.published_at:sub(1, 10) or "Unknown Date",
-                        release.body or "No description available"
-                    )
-                end
-                
-                ChangelogContent:SetTitle("Recent Updates (Last 3)")
-                ChangelogContent:SetDesc(changelogText)
-            else
-                ChangelogContent:SetDesc("No releases found on GitHub")
-            end
-        end)
-        
-        if not success then
-            ChangelogContent:SetDesc([[Could not fetch changelog from GitHub.
-
-Please check:
-1. GitHub repository is public
-2. API URL is correct
-3. Internet connection is stable
-
-Manual check: Visit your GitHub repository]])
-        end
-    end)
-end
-
--- Fetch changelog on load
-FetchGitHubChangelog()
-
-Tabs.Changelog:AddButton({
-    Title = "Refresh Changelog",
-    Description = "Fetch latest updates from GitHub",
-    Callback = function()
-        ChangelogContent:SetDesc("Loading changelog from GitHub...")
-        FetchGitHubChangelog()
-        Fluent:Notify({
-            Title = "Refreshing",
-            Content = "Fetching latest updates...",
-            Duration = 2
-        })
-    end
-})
-
-Tabs.Changelog:AddButton({
-    Title = "Open GitHub Repository",
-    Description = "View full changelog and source code",
-    Callback = function()
-        setclipboard("https://github.com/terribleshub/Terribles-Hub")
-        Fluent:Notify({
-            Title = "Copied",
-            Content = "GitHub URL copied to clipboard",
-            Duration = 3
-        })
-    end
+Stay tuned for updates!]]
 })
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
