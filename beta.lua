@@ -68,8 +68,8 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Profile = Window:AddTab({ Title = "Profile", Icon = "user" }),
     Main = Window:AddTab({ Title = "Auto Parry", Icon = "shield" }),
-    Exploits = Window:AddTab({ Title = "Exploits", Icon = "zap" }),
     Camera = Window:AddTab({ Title = "Camera", Icon = "camera" }),
+    Exploits = Window:AddTab({ Title = "Exploits", Icon = "code" }),
     Info = Window:AddTab({ Title = "Ball Info", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
