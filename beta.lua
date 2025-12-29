@@ -70,7 +70,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Auto Parry", Icon = "shield" }),
     Camera = Window:AddTab({ Title = "Camera", Icon = "camera" }),
     Exploits = Window:AddTab({ Title = "Exploits", Icon = "code" }),
-    Info = Window:AddTab({ Title = "Ball Info", Icon = "info" }),
+    Info = Window:AddTab({ Title = "Game Info", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
@@ -96,13 +96,16 @@ local IsParrying = false
 local LastFrameTime = 0
 
 local AntiAFKEnabled = false
-local LastMovementTime = tick()
-local LastJumpTime = 0
+local AntiAFKInitialized = false
 
 local AutoClickerEnabled = false
 local ClickSpeed = 1000
 local LastClickTime = 0
-local AutoClickerKeybindEnum = Enum.KeyCode.E
+local AutoClickerKeybindEnum = nil
+
+local AutoReadyEnabled = false
+local EntryPoint = Vector3.new(569.28, 285.00, -781.40)
+local IsWalkingToEntry = false
 
 local DefaultFOV = 70
 local DefaultMaxZoom = 128
@@ -111,6 +114,8 @@ local CurrentMaxZoom = DefaultMaxZoom
 local Camera = workspace.CurrentCamera
 
 local MainLoop = nil
+local FPSCounter = 0
+local LastFPSUpdate = tick()
 
 local ParryStats = {
     TotalParries = 0,
@@ -231,25 +236,70 @@ end
 local function AntiAFK()
     if not AntiAFKEnabled then return end
     
-    local currentTime = tick()
+    local GC = getconnections or get_signal_cons
+    if GC then
+        for i,v in pairs(GC(LP.Idled)) do
+            if v["Disable"] then
+                v["Disable"](v)
+            elseif v["Disconnect"] then
+                v["Disconnect"](v)
+            end
+        end
+    else
+        local VirtualUser = cloneref and cloneref(game:GetService("VirtualUser")) or game:GetService("VirtualUser")
+        LP.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+end
+
+local function IsInGame()
+    local success, result = pcall(function()
+        local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
+        return healthBar.Visible == true
+    end)
+    return success and result
+end
+
+local function WalkToPosition(targetPos)
+    if not LP.Character then return false end
     
-    if currentTime - LastMovementTime >= math.random(10, 15) then
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftShift, false, game)
-        task.wait(0.001)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftShift, false, game)
-        
-        LastMovementTime = currentTime
+    local humanoid = LP.Character:FindFirstChild("Humanoid")
+    local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoid or not rootPart then return false end
+    
+    local distance = (rootPart.Position - targetPos).Magnitude
+    
+    if distance < 5 then
+        humanoid:MoveTo(rootPart.Position)
+        return true
     end
     
-    if currentTime - LastJumpTime >= math.random(20, 30) then
-        if Camera then
-            local currentCFrame = Camera.CFrame
-            Camera.CFrame = currentCFrame * CFrame.Angles(0, math.rad(0.1), 0)
-            task.wait(0.001)
-            Camera.CFrame = currentCFrame
-        end
-        
-        LastJumpTime = currentTime
+    humanoid:MoveTo(targetPos)
+    return false
+end
+
+local function AutoReady()
+    if not AutoReadyEnabled then 
+        IsWalkingToEntry = false
+        return 
+    end
+    
+    if IsInGame() then
+        IsWalkingToEntry = false
+        return
+    end
+    
+    if not IsWalkingToEntry then
+        IsWalkingToEntry = true
+    end
+    
+    local reached = WalkToPosition(EntryPoint)
+    
+    if reached and IsWalkingToEntry then
+        IsWalkingToEntry = false
     end
 end
 
@@ -375,32 +425,6 @@ task.spawn(function()
     end
 end)
 
-Tabs.Profile:AddButton({
-    Title = "Copy User ID",
-    Description = "Copy your Roblox User ID to clipboard",
-    Callback = function()
-        setclipboard(tostring(UserId))
-        Fluent:Notify({
-            Title = "Copied",
-            Content = "User ID copied to clipboard",
-            Duration = 2
-        })
-    end
-})
-
-Tabs.Profile:AddButton({
-    Title = "Copy HWID",
-    Description = "Copy your Hardware ID to clipboard",
-    Callback = function()
-        setclipboard(PlayerHWID)
-        Fluent:Notify({
-            Title = "Copied",
-            Content = "HWID copied to clipboard",
-            Duration = 2
-        })
-    end
-})
-
 local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
@@ -450,7 +474,7 @@ end)
 local AutoClickerKeybind = Tabs.Main:AddKeybind("AutoClickerKeybind", {
     Title = "Auto Clicker Keybind",
     Mode = "Toggle",
-    Default = "E",
+    Default = "None",
     Callback = function(Value)
         AutoClickerEnabled = Value
         Options.AutoClickerToggle:SetValue(Value)
@@ -485,52 +509,33 @@ local AntiAFKToggle = Tabs.Main:AddToggle("AntiAFKToggle", {
 
 AntiAFKToggle:OnChanged(function()
     AntiAFKEnabled = Options.AntiAFKToggle.Value
+    if AntiAFKEnabled and not AntiAFKInitialized then
+        AntiAFK()
+        AntiAFKInitialized = true
+    end
 end)
 
-local DestroyButton = Tabs.Main:AddButton({
-    Title = "Destroy Script",
-    Description = "Remove the script completely",
-    Callback = function()
-        Fluent:Notify({
-            Title = "Script Destroyed",
-            Content = "The script has been removed",
-            Duration = 2
-        })
-        
-        if MainLoop then
-            MainLoop = false
-        end
-        
-        AutoParryEnabled = false
-        AutoClickerEnabled = false
-        ResetCamera()
-        
-        task.wait(0.5)
-        
-        Fluent:Destroy()
-    end
+local AutoReadySection = Tabs.Main:AddSection("Auto Ready")
+
+local AutoReadyToggle = Tabs.Main:AddToggle("AutoReadyToggle", {
+    Title = "Auto Ready",
+    Description = "Automatically walks to the ready zone when not in game",
+    Default = false
 })
 
-local RejoinButton = Tabs.Main:AddButton({
-    Title = "Rejoin Server",
-    Description = "Restart and rejoin the game",
-    Callback = function()
-        Fluent:Notify({
-            Title = "Rejoining...",
-            Content = "Restarting the game",
-            Duration = 2
-        })
-        
-        task.wait(0.5)
-        
-        local TeleportService = game:GetService("TeleportService")
-        local Players = game:GetService("Players")
-        local PlaceId = game.PlaceId
-        local Player = Players.LocalPlayer
-        
-        TeleportService:Teleport(PlaceId, Player)
+AutoReadyToggle:OnChanged(function()
+    AutoReadyEnabled = Options.AutoReadyToggle.Value
+    if not AutoReadyEnabled then
+        IsWalkingToEntry = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            local humanoid = LP.Character.Humanoid
+            local rootPart = LP.Character.HumanoidRootPart
+            if rootPart then
+                humanoid:MoveTo(rootPart.Position)
+            end
+        end
     end
-})
+end)
 
 local FOVSlider = Tabs.Camera:AddSlider("FOV", {
     Title = "Field of View",
@@ -579,8 +584,17 @@ local ResetCameraButton = Tabs.Camera:AddButton({
     end
 })
 
+local GameInfoSection = Tabs.Info:AddSection("Game Information")
+
+local GameInfoParagraph = Tabs.Info:AddParagraph({
+    Title = "Server Status",
+    Content = "Loading..."
+})
+
+local BallInfoSection = Tabs.Info:AddSection("Ball Information")
+
 local BallInfoParagraph = Tabs.Info:AddParagraph({
-    Title = "Ball Information",
+    Title = "Ball Data",
     Content = "Waiting for ball..."
 })
 
@@ -598,10 +612,58 @@ Tabs.Exploits:AddParagraph({
 Stay tuned for updates!]]
 })
 
+local ScriptControlSection = Tabs.Settings:AddSection("Script Control")
+
+local DestroyButton = Tabs.Settings:AddButton({
+    Title = "Destroy Script",
+    Description = "Remove the script completely",
+    Callback = function()
+        Fluent:Notify({
+            Title = "Script Destroyed",
+            Content = "The script has been removed",
+            Duration = 2
+        })
+        
+        if MainLoop then
+            MainLoop = false
+        end
+        
+        AutoParryEnabled = false
+        AutoClickerEnabled = false
+        AutoReadyEnabled = false
+        ResetCamera()
+        
+        task.wait(0.5)
+        
+        Fluent:Destroy()
+    end
+})
+
+local RejoinButton = Tabs.Settings:AddButton({
+    Title = "Rejoin Server",
+    Description = "Restart and rejoin the game",
+    Callback = function()
+        Fluent:Notify({
+            Title = "Rejoining...",
+            Content = "Restarting the game",
+            Duration = 2
+        })
+        
+        task.wait(0.5)
+        
+        local TeleportService = game:GetService("TeleportService")
+        local Players = game:GetService("Players")
+        local PlaceId = game.PlaceId
+        local Player = Players.LocalPlayer
+        
+        TeleportService:Teleport(PlaceId, Player)
+    end
+})
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if input.KeyCode == AutoClickerKeybindEnum then
+    if AutoClickerKeybindEnum and input.KeyCode == AutoClickerKeybindEnum then
         AutoClickerEnabled = not AutoClickerEnabled
         Options.AutoClickerToggle:SetValue(AutoClickerEnabled)
     end
@@ -642,10 +704,36 @@ coroutine.wrap(function()
         
         task.wait()
         
-        AntiAFK()
+        FPSCounter = FPSCounter + 1
+        if tick() - LastFPSUpdate >= 1 then
+            local fps = FPSCounter
+            FPSCounter = 0
+            LastFPSUpdate = tick()
+            
+            local ping = math.floor(LP:GetNetworkPing() * 1000)
+            
+            local inGame = "No"
+            local success, result = pcall(function()
+                local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
+                return healthBar.Visible == true
+            end)
+            
+            if success and result then
+                inGame = "Yes"
+            end
+            
+            GameInfoParagraph:SetDesc(string.format(
+                "FPS: %d | Ping: %d ms | In Game: %s",
+                fps, ping, inGame
+            ))
+        end
         
         if AutoClickerEnabled then
             UltraAutoClicker()
+        end
+        
+        if AutoReadyEnabled then
+            AutoReady()
         end
         
         if not BallShadow then
