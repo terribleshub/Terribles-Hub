@@ -102,7 +102,7 @@ local LastJumpTime = 0
 local AutoClickerEnabled = false
 local ClickSpeed = 1000
 local LastClickTime = 0
-local AutoClickerKeybindEnum = nil
+local AutoClickerKeybindEnum = Enum.KeyCode.E
 
 local DefaultFOV = 70
 local DefaultMaxZoom = 128
@@ -450,7 +450,7 @@ end)
 local AutoClickerKeybind = Tabs.Main:AddKeybind("AutoClickerKeybind", {
     Title = "Auto Clicker Keybind",
     Mode = "Toggle",
-    Default = nil,
+    Default = "E",
     Callback = function(Value)
         AutoClickerEnabled = Value
         Options.AutoClickerToggle:SetValue(Value)
@@ -601,7 +601,7 @@ Stay tuned for updates!]]
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if AutoClickerKeybindEnum and input.KeyCode == AutoClickerKeybindEnum then
+    if input.KeyCode == AutoClickerKeybindEnum then
         AutoClickerEnabled = not AutoClickerEnabled
         Options.AutoClickerToggle:SetValue(AutoClickerEnabled)
     end
