@@ -331,19 +331,16 @@ local function AutoReady()
         return 
     end
     
-    -- Si está en el juego, resetear todo
+    -- PRIMERO verificar si está en el juego - si es así, no hacer NADA
     if IsInGame() then
+        -- Resetear estados pero NO mover al jugador
         IsWalkingToEntry = false
         HasReachedEntry = false
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            local humanoid = LP.Character.Humanoid
-            local rootPart = LP.Character.HumanoidRootPart
-            if rootPart then
-                humanoid:MoveTo(rootPart.Position)
-            end
-        end
+        -- NO detener el movimiento cuando está en juego
         return
     end
+    
+    -- Solo proceder si NO está en el juego
     
     -- Detectar si el jugador se ha movido manualmente
     if HasPlayerMoved() then
