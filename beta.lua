@@ -264,23 +264,10 @@ end
 
 local function IsInGame()
     local success, result = pcall(function()
-        local healthBar = LP.PlayerGui:FindFirstChild("HUD")
-        if healthBar then
-            healthBar = healthBar:FindFirstChild("HolderBottom")
-            if healthBar then
-                healthBar = healthBar:FindFirstChild("HealthBar")
-                if healthBar then
-                    return healthBar.Visible == true
-                end
-            end
-        end
-        return false
+        local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
+        return healthBar.Visible == true
     end)
-    
-    if success then
-        return result
-    end
-    return false
+    return success and result
 end
 
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
