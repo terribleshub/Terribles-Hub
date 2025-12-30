@@ -409,7 +409,7 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.1 Fixed
+    Content = [[Version: 3.1
 Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
@@ -817,7 +817,7 @@ Window:SelectTab(1)
 
 Fluent:Notify({
     Title = "Terribles Hub",
-    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated - Fixed Version",
+    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated",
     Duration = 5
 })
 
