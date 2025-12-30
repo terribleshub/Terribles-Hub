@@ -103,10 +103,6 @@ local ClickSpeed = 1000
 local LastClickTime = 0
 local AutoClickerKeybindEnum = nil
 
-local AutoReadyEnabled = false
-local EntryPoint = Vector3.new(569.28, 285.00, -781.40)
-local IsWalkingToEntry = false
-
 local DefaultFOV = 70
 local DefaultMaxZoom = 128
 local CurrentFOV = DefaultFOV
@@ -273,54 +269,6 @@ local function IsInGame()
         return result
     end
     return false
-end
-
-local function WalkToPosition(targetPos)
-    if not LP.Character then return false end
-    
-    local humanoid = LP.Character:FindFirstChild("Humanoid")
-    local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
-    
-    if not humanoid or not rootPart then return false end
-    
-    local distance = (rootPart.Position - targetPos).Magnitude
-    
-    if distance < 5 then
-        humanoid:MoveTo(rootPart.Position)
-        return true
-    end
-    
-    humanoid:MoveTo(targetPos)
-    return false
-end
-
-local function AutoReady()
-    if not AutoReadyEnabled then 
-        IsWalkingToEntry = false
-        return 
-    end
-    
-    if IsInGame() then
-        IsWalkingToEntry = false
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            local humanoid = LP.Character.Humanoid
-            local rootPart = LP.Character.HumanoidRootPart
-            if rootPart then
-                humanoid:MoveTo(rootPart.Position)
-            end
-        end
-        return
-    end
-    
-    if not IsWalkingToEntry then
-        IsWalkingToEntry = true
-    end
-    
-    local reached = WalkToPosition(EntryPoint)
-    
-    if reached and IsWalkingToEntry then
-        IsWalkingToEntry = false
-    end
 end
 
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
@@ -535,28 +483,6 @@ AntiAFKToggle:OnChanged(function()
     end
 end)
 
-local AutoReadySection = Tabs.Main:AddSection("Auto Ready")
-
-local AutoReadyToggle = Tabs.Main:AddToggle("AutoReadyToggle", {
-    Title = "Auto Ready",
-    Description = "Automatically walks to the ready zone when not in game",
-    Default = false
-})
-
-AutoReadyToggle:OnChanged(function()
-    AutoReadyEnabled = Options.AutoReadyToggle.Value
-    if not AutoReadyEnabled then
-        IsWalkingToEntry = false
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            local humanoid = LP.Character.Humanoid
-            local rootPart = LP.Character.HumanoidRootPart
-            if rootPart then
-                humanoid:MoveTo(rootPart.Position)
-            end
-        end
-    end
-end)
-
 local FOVSlider = Tabs.Camera:AddSlider("FOV", {
     Title = "Field of View",
     Description = "Camera FOV adjustment",
@@ -650,7 +576,6 @@ local DestroyButton = Tabs.Settings:AddButton({
         
         AutoParryEnabled = false
         AutoClickerEnabled = false
-        AutoReadyEnabled = false
         ResetCamera()
         
         task.wait(0.5)
@@ -750,10 +675,6 @@ coroutine.wrap(function()
         
         if AutoClickerEnabled then
             UltraAutoClicker()
-        end
-        
-        if AutoReadyEnabled then
-            AutoReady()
         end
         
         if not BallShadow then
