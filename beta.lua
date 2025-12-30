@@ -362,52 +362,6 @@ local function GetCurrentGameName()
     end
 end
 
-local function GetServerRegion()
-    local LocalizationService = game:GetService("LocalizationService")
-    local success, result = pcall(function()
-        return LocalizationService:GetCountryRegionForPlayerAsync(LP)
-    end)
-    
-    if success and result then
-        -- Convertir código de región a nombre completo
-        local regionNames = {
-            ["US"] = "United States",
-            ["EU"] = "Europe",
-            ["AS"] = "Asia",
-            ["SA"] = "South America",
-            ["OC"] = "Oceania",
-            ["AF"] = "Africa",
-            ["GB"] = "United Kingdom",
-            ["DE"] = "Germany",
-            ["FR"] = "France",
-            ["BR"] = "Brazil",
-            ["JP"] = "Japan",
-            ["CN"] = "China",
-            ["AU"] = "Australia",
-            ["CA"] = "Canada",
-            ["MX"] = "Mexico",
-            ["ES"] = "Spain",
-            ["IT"] = "Italy",
-            ["RU"] = "Russia",
-            ["IN"] = "India",
-            ["KR"] = "South Korea",
-            ["NL"] = "Netherlands",
-            ["SE"] = "Sweden",
-            ["PL"] = "Poland",
-            ["TR"] = "Turkey",
-            ["AR"] = "Argentina",
-            ["CL"] = "Chile",
-            ["CO"] = "Colombia",
-            ["PE"] = "Peru",
-            ["VE"] = "Venezuela"
-        }
-        
-        return regionNames[result] or result
-    else
-        return "Unknown"
-    end
-end
-
 task.spawn(function()
     task.wait(1)
     SendDiscordWebhook()
