@@ -1,4 +1,4 @@
- local AllowedHWIDs = {
+local AllowedHWIDs = {
     "F0B9FAE1-1D50-4E72-9CC9-7A7231659339", -- Owner
     "C65D92C8-1C22-4629-AE24-7B4803701734", -- Jery
     "27FB119D-21E9-4124-8E49-5BDD9F02CD87", -- Miguel
@@ -106,6 +106,9 @@ local AutoClickerKeybindEnum = nil
 local AutoReadyEnabled = false
 local EntryPoint = Vector3.new(569.28, 285.00, -781.40)
 local IsWalkingToEntry = false
+local HasReachedEntry = false
+local LastPlayerMoveTime = 0
+local PlayerMovementThreshold = 2
 
 local DefaultFOV = 70
 local DefaultMaxZoom = 128
@@ -275,6 +278,33 @@ local function IsInGame()
     return false
 end
 
+local LastKnownPosition = nil
+
+local function HasPlayerMoved()
+    if not LP.Character then return false end
+    
+    local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return false end
+    
+    local currentPos = rootPart.Position
+    
+    if not LastKnownPosition then
+        LastKnownPosition = currentPos
+        return false
+    end
+    
+    local distance = (currentPos - LastKnownPosition).Magnitude
+    
+    if distance > PlayerMovementThreshold then
+        LastKnownPosition = currentPos
+        LastPlayerMoveTime = tick()
+        return true
+    end
+    
+    LastKnownPosition = currentPos
+    return false
+end
+
 local function WalkToPosition(targetPos)
     if not LP.Character then return false end
     
@@ -297,11 +327,14 @@ end
 local function AutoReady()
     if not AutoReadyEnabled then 
         IsWalkingToEntry = false
+        HasReachedEntry = false
         return 
     end
     
+    -- Si está en el juego, resetear todo
     if IsInGame() then
         IsWalkingToEntry = false
+        HasReachedEntry = false
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             local humanoid = LP.Character.Humanoid
             local rootPart = LP.Character.HumanoidRootPart
@@ -312,14 +345,40 @@ local function AutoReady()
         return
     end
     
+    -- Detectar si el jugador se ha movido manualmente
+    if HasPlayerMoved() then
+        -- Si el jugador se mueve, dar control total
+        IsWalkingToEntry = false
+        HasReachedEntry = false
+        return
+    end
+    
+    -- Si ya llegó a la entrada, no hacer nada más
+    if HasReachedEntry then
+        return
+    end
+    
+    -- Si no está caminando, iniciar el camino
     if not IsWalkingToEntry then
         IsWalkingToEntry = true
     end
     
+    -- Caminar hacia el punto de entrada
     local reached = WalkToPosition(EntryPoint)
     
+    -- Si llegó al punto, marcar como completado y detener movimiento
     if reached and IsWalkingToEntry then
         IsWalkingToEntry = false
+        HasReachedEntry = true
+        
+        -- Detener completamente el movimiento
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            local humanoid = LP.Character.Humanoid
+            local rootPart = LP.Character.HumanoidRootPart
+            if rootPart then
+                humanoid:MoveTo(rootPart.Position)
+            end
+        end
     end
 end
 
@@ -539,7 +598,7 @@ local AutoReadySection = Tabs.Main:AddSection("Auto Ready")
 
 local AutoReadyToggle = Tabs.Main:AddToggle("AutoReadyToggle", {
     Title = "Auto Ready",
-    Description = "Automatically walks to the ready zone when not in game",
+    Description = "Automatically walks to ready zone. Move to regain control.",
     Default = false
 })
 
@@ -547,6 +606,7 @@ AutoReadyToggle:OnChanged(function()
     AutoReadyEnabled = Options.AutoReadyToggle.Value
     if not AutoReadyEnabled then
         IsWalkingToEntry = false
+        HasReachedEntry = false
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             local humanoid = LP.Character.Humanoid
             local rootPart = LP.Character.HumanoidRootPart
