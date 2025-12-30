@@ -99,7 +99,7 @@ local AntiAFKEnabled = false
 local AntiAFKInitialized = false
 
 local AutoClickerEnabled = false
-local ClickSpeed = 1000
+local ClickSpeed = 2000  -- Fixed at 2000 CPS
 local LastClickTime = 0
 local AutoClickerKeybindEnum = nil
 
@@ -422,7 +422,8 @@ local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
 local AutoClickerSection = Tabs.Main:AddSection("Auto Clicker")
 
 local AutoClickerToggle = Tabs.Main:AddToggle("AutoClickerToggle", {
-    Title = "Auto Clicker",
+    Title = "Auto Clicker (2000 CPS)",
+    Description = "Ultra-fast auto clicker at maximum speed",
     Default = false
 })
 
@@ -445,18 +446,6 @@ local AutoClickerKeybind = Tabs.Main:AddKeybind("AutoClickerKeybind", {
 
 AutoClickerKeybind:OnClick(function()
 end)
-
-local ClickSpeedSlider = Tabs.Main:AddSlider("ClickSpeed", {
-    Title = "Click Speed",
-    Description = "Clicks per second",
-    Default = 1000,
-    Min = 100,
-    Max = 2000,
-    Rounding = 0,
-    Callback = function(Value)
-        ClickSpeed = Value
-    end
-})
 
 local AntiAFKSection = Tabs.Main:AddSection("Anti-AFK")
 
