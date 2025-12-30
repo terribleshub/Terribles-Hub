@@ -671,8 +671,17 @@ coroutine.wrap(function()
             
             local inGame = "No"
             local success, result = pcall(function()
-                local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
-                return healthBar.Visible == true
+                local healthBar = LP.PlayerGui:FindFirstChild("HUD")
+                if healthBar then
+                    healthBar = healthBar:FindFirstChild("HolderBottom")
+                    if healthBar then
+                        healthBar = healthBar:FindFirstChild("HealthBar")
+                        if healthBar then
+                            return healthBar.Visible == true
+                        end
+                    end
+                end
+                return false
             end)
             
             if success and result then
