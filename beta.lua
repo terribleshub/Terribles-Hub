@@ -422,7 +422,7 @@ local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
 local AutoClickerSection = Tabs.Main:AddSection("Auto Clicker")
 
 local AutoClickerToggle = Tabs.Main:AddToggle("AutoClickerToggle", {
-    Title = "Auto Clicker (2000 CPS)",
+    Title = "Auto Clicker",
     Description = "Ultra-fast auto clicker at maximum speed",
     Default = false
 })
