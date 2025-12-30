@@ -264,10 +264,23 @@ end
 
 local function IsInGame()
     local success, result = pcall(function()
-        local healthBar = LP.PlayerGui.HUD.HolderBottom.HealthBar
-        return healthBar.Visible == true
+        local healthBar = LP.PlayerGui:FindFirstChild("HUD")
+        if healthBar then
+            healthBar = healthBar:FindFirstChild("HolderBottom")
+            if healthBar then
+                healthBar = healthBar:FindFirstChild("HealthBar")
+                if healthBar then
+                    return healthBar.Visible == true
+                end
+            end
+        end
+        return false
     end)
-    return success and result
+    
+    if success then
+        return result
+    end
+    return false
 end
 
 local ProfileSection = Tabs.Profile:AddSection("User Profile")
@@ -656,13 +669,28 @@ coroutine.wrap(function()
             
             local ping = math.floor(LP:GetNetworkPing() * 1000)
             
-            -- Detectar si está en juego
-            local inGame = IsInGame()
-            local inGameText = inGame and "Yes" or "No"
+            local inGame = "No"
+            local success, result = pcall(function()
+                local healthBar = LP.PlayerGui:FindFirstChild("HUD")
+                if healthBar then
+                    healthBar = healthBar:FindFirstChild("HolderBottom")
+                    if healthBar then
+                        healthBar = healthBar:FindFirstChild("HealthBar")
+                        if healthBar then
+                            return healthBar.Visible == true
+                        end
+                    end
+                end
+                return false
+            end)
+            
+            if success and result then
+                inGame = "Yes"
+            end
             
             GameInfoParagraph:SetDesc(string.format(
                 "FPS: %d | Ping: %d ms | In Game: %s",
-                fps, ping, inGameText
+                fps, ping, inGame
             ))
         end
         
