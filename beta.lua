@@ -195,24 +195,36 @@ local function Parry()
 end
 
 local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
+    -- Cálculo basado en ping compensator (1-25)
     local staticDistance
     if StaticPingCompensation <= 5 then
-        staticDistance = 15 + ((StaticPingCompensation - 1) / 4) * 10
+        staticDistance = 18 + ((StaticPingCompensation - 1) / 4) * 12
     elseif StaticPingCompensation <= 10 then
-        staticDistance = 25 + ((StaticPingCompensation - 5) / 5) * 10
+        staticDistance = 30 + ((StaticPingCompensation - 5) / 5) * 15
     elseif StaticPingCompensation <= 15 then
-        staticDistance = 35 + ((StaticPingCompensation - 10) / 5) * 15
+        staticDistance = 45 + ((StaticPingCompensation - 10) / 5) * 20
     elseif StaticPingCompensation <= 20 then
-        staticDistance = 50 + ((StaticPingCompensation - 15) / 5) * 20
+        staticDistance = 65 + ((StaticPingCompensation - 15) / 5) * 25
     else
-        staticDistance = 70 + ((StaticPingCompensation - 20) / 5) * 10
+        staticDistance = 90 + ((StaticPingCompensation - 20) / 5) * 15
     end
     
+    -- Factor dinámico basado en velocidad y ping
     local ping = LP:GetNetworkPing()
-    local dynamicDistance = BaseDistance + (velocity * ping * DynamicPingFactor)
+    local velocityFactor = math.clamp(velocity / 100, 0.5, 2.5)
+    local dynamicDistance = BaseDistance + (velocity * ping * DynamicPingFactor * velocityFactor)
     
-    local hybridDistance = (dynamicDistance * 0.6) + (staticDistance * 0.4)
-    return hybridDistance
+    -- Mezcla híbrida: más peso al compensador estático
+    local hybridDistance = (dynamicDistance * 0.3) + (staticDistance * 0.7)
+    
+    -- Ajuste adicional por velocidad extrema
+    if velocity > 150 then
+        hybridDistance = hybridDistance * 1.2
+    elseif velocity < 50 then
+        hybridDistance = hybridDistance * 0.85
+    end
+    
+    return math.clamp(hybridDistance, 15, 150)
 end
 
 local function UltraAutoClicker()
@@ -397,7 +409,7 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.0
+    Content = [[Version: 3.1 Fixed
 Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
@@ -418,7 +430,7 @@ end)
 
 local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
     Title = "Ping Compensator",
-    Description = "Adjust for your ping",
+    Description = "Adjust for your ping (Higher = Earlier parry)",
     Default = 10,
     Min = 1,
     Max = 25,
@@ -727,12 +739,17 @@ coroutine.wrap(function()
             local isBallWhite = ballColor == WhiteColor
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
-            local heightTolerance = 20
+            
+            -- Tolerancia de altura más flexible basada en velocidad
+            local heightTolerance = 25
+            if velocity > 100 then
+                heightTolerance = 35
+            end
             
             if LP.Character:FindFirstChild("Humanoid") then
                 local humanoid = LP.Character.Humanoid
                 if humanoid.FloorMaterial == Enum.Material.Air then
-                    heightTolerance = 35
+                    heightTolerance = 45
                 end
             end
             
@@ -744,21 +761,26 @@ coroutine.wrap(function()
             ))
             
             SystemInfoParagraph:SetDesc(string.format(
-                "Optimal Distance: %.1f | Height Diff: %.1f | In Air: %s | Ping Comp: %d",
+                "Optimal: %.1f | Flat: %.1f | Height Diff: %.1f | Velocity: %.1f",
                 optimalDistance,
+                flatDistance,
                 heightDifference,
-                (LP.Character:FindFirstChild("Humanoid") and LP.Character.Humanoid.FloorMaterial == Enum.Material.Air) and "Yes" or "No",
-                StaticPingCompensation
+                velocity
             ))
             
             if AutoParryEnabled then
                 local currentTime = tick()
                 
+                -- Sistema mejorado de detección
+                local isMovingTowardsPlayer = moveDir:Dot((PlayerPos - BallPos).Unit) > 0.3
+                
+                -- Condición principal: usa la distancia 3D como referencia principal
                 local shouldParryHybrid = not isBallWhite
-                    and distance3D <= optimalDistance
-                    and flatDistance <= optimalDistance
-                    and heightDifference <= heightTolerance
                     and currentTime - LastParryTime > ParryCooldown
+                    and distance3D <= optimalDistance
+                    and heightDifference <= heightTolerance
+                    and velocity > 10  -- Asegura que la bola esté en movimiento
+                    and (isMovingTowardsPlayer or flatDistance < optimalDistance * 0.7)
                 
                 if shouldParryHybrid then
                     Parry()
@@ -786,7 +808,7 @@ Window:SelectTab(1)
 
 Fluent:Notify({
     Title = "Terribles Hub",
-    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated",
+    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated - Fixed Version",
     Duration = 5
 })
 
