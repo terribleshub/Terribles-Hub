@@ -99,7 +99,7 @@ local AntiAFKEnabled = false
 local AntiAFKInitialized = false
 
 local AutoClickerEnabled = false
-local ClickSpeed = 2000  -- Fixed at 2000 CPS
+local ClickSpeed = 2000
 local LastClickTime = 0
 local AutoClickerKeybindEnum = nil
 
@@ -194,7 +194,7 @@ local function Parry()
     IsParrying = false
 end
 
-local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
+local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance, isPlayerInAir, heightDifference)
     -- Cálculo basado en ping compensator (1-25)
     local staticDistance
     if StaticPingCompensation <= 5 then
@@ -214,17 +214,36 @@ local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
     local velocityFactor = math.clamp(velocity / 100, 0.5, 2.5)
     local dynamicDistance = BaseDistance + (velocity * ping * DynamicPingFactor * velocityFactor)
     
+    -- NUEVO: Compensación especial para cuando el jugador está en el aire
+    local airCompensation = 1.0
+    if isPlayerInAir then
+        -- Aumenta significativamente la distancia de parry en el aire
+        airCompensation = 1.4 + (velocity / 200) -- Más agresivo según velocidad
+        
+        -- Compensación adicional basada en diferencia de altura
+        local heightFactor = math.clamp(heightDifference / 30, 1.0, 1.6)
+        airCompensation = airCompensation * heightFactor
+        
+        -- Bonus por ping alto en el aire
+        if StaticPingCompensation > 15 then
+            airCompensation = airCompensation * 1.2
+        end
+    end
+    
     -- Mezcla híbrida: más peso al compensador estático
     local hybridDistance = (dynamicDistance * 0.3) + (staticDistance * 0.7)
     
+    -- Aplicar compensación de aire
+    hybridDistance = hybridDistance * airCompensation
+    
     -- Ajuste adicional por velocidad extrema
     if velocity > 150 then
-        hybridDistance = hybridDistance * 1.2
+        hybridDistance = hybridDistance * (isPlayerInAir and 1.35 or 1.2)
     elseif velocity < 50 then
-        hybridDistance = hybridDistance * 0.85
+        hybridDistance = hybridDistance * (isPlayerInAir and 0.95 or 0.85)
     end
     
-    return math.clamp(hybridDistance, 15, 150)
+    return math.clamp(hybridDistance, 15, 200) -- Aumentado el máximo a 200
 end
 
 local function UltraAutoClicker()
@@ -401,7 +420,7 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.1
+    Content = [[Version: 3.2 (Air Combat Enhanced)
 Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
@@ -422,7 +441,7 @@ end)
 
 local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
     Title = "Ping Compensator",
-    Description = "Adjust for your ping (Higher = Earlier parry)",
+    Description = "Adjust for your ping (Higher = Earlier parry | Optimized for air combat)",
     Default = 10,
     Min = 1,
     Max = 25,
@@ -676,7 +695,7 @@ coroutine.wrap(function()
         if BallShadow then
             if not LastBallPos then
                 LastBallPos = BallShadow.Position
-                BallInfoParagraph:SetDesc("Ball found! Hybrid system active")
+                BallInfoParagraph:SetDesc("Ball found! Air combat system active")
             end
         else
             BallInfoParagraph:SetDesc("Searching for ball...")
@@ -716,47 +735,78 @@ coroutine.wrap(function()
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             
-            -- Tolerancia de altura más flexible basada en velocidad
-            local heightTolerance = 25
-            if velocity > 100 then
-                heightTolerance = 35
-            end
+            -- MEJORADO: Detección de estado aéreo del jugador
+            local isPlayerInAir = false
+            local playerVerticalVelocity = 0
             
             if LP.Character:FindFirstChild("Humanoid") then
                 local humanoid = LP.Character.Humanoid
-                if humanoid.FloorMaterial == Enum.Material.Air then
-                    heightTolerance = 45
+                isPlayerInAir = humanoid.FloorMaterial == Enum.Material.Air
+                
+                -- Detectar velocidad vertical del jugador
+                if LP.Character.PrimaryPart then
+                    playerVerticalVelocity = LP.Character.PrimaryPart.AssemblyLinearVelocity.Y
                 end
             end
             
-            local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
+            -- Tolerancia de altura adaptativa mejorada
+            local heightTolerance = 25
             
+            if isPlayerInAir then
+                -- Tolerancia mucho más generosa en el aire
+                heightTolerance = 50 + (velocity * 0.15)
+                
+                -- Si el jugador está cayendo o subiendo rápido
+                if math.abs(playerVerticalVelocity) > 20 then
+                    heightTolerance = heightTolerance + 20
+                end
+            elseif velocity > 100 then
+                heightTolerance = 35
+            end
+            
+            local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance, isPlayerInAir, heightDifference)
+            
+            -- Información mejorada con estado aéreo
+            local airStatus = isPlayerInAir and " [AIR]" or ""
             BallInfoParagraph:SetDesc(string.format(
-                "Speed: %.2f | Height: %.1f | Distance: %.1f", 
-                velocity, ballHeight, distance3D
+                "Speed: %.2f | Height: %.1f | Distance: %.1f%s", 
+                velocity, ballHeight, distance3D, airStatus
             ))
             
             SystemInfoParagraph:SetDesc(string.format(
-                "Optimal: %.1f | Flat: %.1f | Height Diff: %.1f | Velocity: %.1f",
+                "Optimal: %.1f | Flat: %.1f | Height Diff: %.1f | V-Vel: %.1f",
                 optimalDistance,
                 flatDistance,
                 heightDifference,
-                velocity
+                playerVerticalVelocity
             ))
             
             if AutoParryEnabled then
                 local currentTime = tick()
                 
-                -- Sistema mejorado de detección
-                local isMovingTowardsPlayer = moveDir:Dot((PlayerPos - BallPos).Unit) > 0.3
+                -- Sistema mejorado de detección de dirección
+                local isMovingTowardsPlayer = moveDir:Dot((PlayerPos - BallPos).Unit) > 0.2
                 
-                -- Condición principal: usa la distancia 3D como referencia principal
-                local shouldParryHybrid = not isBallWhite
-                    and currentTime - LastParryTime > ParryCooldown
-                    and distance3D <= optimalDistance
-                    and heightDifference <= heightTolerance
-                    and velocity > 10  -- Asegura que la bola esté en movimiento
-                    and (isMovingTowardsPlayer or flatDistance < optimalDistance * 0.7)
+                -- MEJORADO: Lógica especial para combate aéreo
+                local shouldParryHybrid = false
+                
+                if isPlayerInAir then
+                    -- Modo aéreo: más permisivo y anticipativo
+                    shouldParryHybrid = not isBallWhite
+                        and currentTime - LastParryTime > ParryCooldown
+                        and distance3D <= optimalDistance
+                        and heightDifference <= heightTolerance
+                        and velocity > 5  -- Umbral más bajo en el aire
+                        and (isMovingTowardsPlayer or flatDistance < optimalDistance * 0.85)
+                else
+                    -- Modo terrestre: lógica estándar
+                    shouldParryHybrid = not isBallWhite
+                        and currentTime - LastParryTime > ParryCooldown
+                        and distance3D <= optimalDistance
+                        and heightDifference <= heightTolerance
+                        and velocity > 10
+                        and (isMovingTowardsPlayer or flatDistance < optimalDistance * 0.7)
+                end
                 
                 if shouldParryHybrid then
                     Parry()
@@ -784,7 +834,7 @@ Window:SelectTab(1)
 
 Fluent:Notify({
     Title = "Terribles Hub",
-    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated",
+    Content = "Welcome " .. DisplayName .. "! ✓ Authenticated (Air Combat Enhanced)",
     Duration = 5
 })
 
