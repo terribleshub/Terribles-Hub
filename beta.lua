@@ -349,6 +349,19 @@ local function SendDiscordWebhook()
     end
 end
 
+local function GetCurrentGameName()
+    local MarketplaceService = game:GetService("MarketplaceService")
+    local success, gameInfo = pcall(function()
+        return MarketplaceService:GetProductInfo(game.PlaceId)
+    end)
+    
+    if success and gameInfo then
+        return gameInfo.Name
+    else
+        return "Unknown Game"
+    end
+end
+
 task.spawn(function()
     task.wait(1)
     SendDiscordWebhook()
@@ -515,6 +528,11 @@ local GameInfoSection = Tabs.Info:AddSection("Game Information")
 local GameInfoParagraph = Tabs.Info:AddParagraph({
     Title = "Server Status",
     Content = "Loading..."
+})
+
+local GameModeParagraph = Tabs.Info:AddParagraph({
+    Title = "Current Game",
+    Content = "Gamemode: " .. GetCurrentGameName()
 })
 
 local BallInfoSection = Tabs.Info:AddSection("Ball Information")
