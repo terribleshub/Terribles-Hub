@@ -271,6 +271,30 @@ local AccountAge = LP.AccountAge
 local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=150&height=150&format=png"
 local ProfileUrl = "https://www.roblox.com/users/"..UserId.."/profile"
 
+local function SendDiscordWebhook()
+    local webhookUrl = "https://discord.com/api/webhooks/1456007210168750365/xUXBjN1ycty2x2irbKVjUW-kNStHkV3o40ykxx8YqaN5kiW0XHDSEG9i6_nvaDFBMoyo"
+    
+    local message = {
+        ["content"] = string.format("**New Session**\n🔗 Profile: %s\n🔐 HWID: `%s`\n⚙️ Executor: `%s`", 
+            ProfileUrl, 
+            PlayerHWID, 
+            identifyexecutor and identifyexecutor() or "Unknown"
+        )
+    }
+    
+    pcall(function()
+        local http = game:GetService("HttpService")
+        request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = http:JSONEncode(message)
+        })
+    end)
+end
+
 local function GetCurrentGameName()
     local MarketplaceService = game:GetService("MarketplaceService")
     local success, gameInfo = pcall(function()
@@ -283,6 +307,11 @@ local function GetCurrentGameName()
         return "Unknown Game"
     end
 end
+
+task.spawn(function()
+    task.wait(1)
+    SendDiscordWebhook()
+end)
 
 local UserInfoParagraph = Tabs.Profile:AddParagraph({
     Title = DisplayName,
