@@ -281,7 +281,7 @@ local function SendDiscordWebhook()
             PlayerHWID, 
             identifyexecutor and identifyexecutor() or "Unknown"
         ),
-        ["username"] = "Terribles Hub v3.1"
+        ["username"] = "Terribles Hub v3.2"
     }
     
     pcall(function()
@@ -349,7 +349,7 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.1
+    Content = [[Version: 3.2
 Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
