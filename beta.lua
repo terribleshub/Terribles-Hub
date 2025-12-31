@@ -664,10 +664,20 @@ coroutine.wrap(function()
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             
-            -- Tolerancia de altura consistente para piso y aire
+            -- Tolerancia de altura adaptativa
             local heightTolerance = 25
             if velocity > 100 then
-                heightTolerance = 35
+                heightTolerance = 50  -- Mayor tolerancia para velocidades altas
+            elseif velocity > 70 then
+                heightTolerance = 40
+            end
+            
+            -- Bonus de tolerancia si el jugador está en el aire
+            if LP.Character:FindFirstChild("Humanoid") then
+                local humanoid = LP.Character.Humanoid
+                if humanoid.FloorMaterial == Enum.Material.Air then
+                    heightTolerance = heightTolerance + 20
+                end
             end
             
             local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
