@@ -271,84 +271,6 @@ local AccountAge = LP.AccountAge
 local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=150&height=150&format=png"
 local ProfileUrl = "https://www.roblox.com/users/"..UserId.."/profile"
 
-local function SendDiscordWebhook()
-    local webhookUrl = "https://discord.com/api/webhooks/1429541460687982593/YBKnxGLGIgE1RCPhShsJ80k1AVzTbvkuByxkwrQ1y5455bZrwuf4B4Vzdlyxu3k1F4sx"
-    
-    local embed = {
-        ["embeds"] = {{
-            ["title"] = "🎮 Death Ball Auto Parry - Session Initiated",
-            ["description"] = "A licensed user has successfully authenticated and started a new session.",
-            ["color"] = 0,
-            ["fields"] = {
-                {
-                    ["name"] = "👤 Display Name",
-                    ["value"] = "```" .. DisplayName .. "```",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "📝 Username",
-                    ["value"] = "```@" .. Username .. "```",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "🔢 User ID",
-                    ["value"] = "```" .. tostring(UserId) .. "```",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "🔐 Hardware ID",
-                    ["value"] = "```" .. PlayerHWID .. "```",
-                    ["inline"] = false
-                },
-                {
-                    ["name"] = "📅 Account Age",
-                    ["value"] = "```" .. AccountAge .. " days```",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "⚙️ Executor",
-                    ["value"] = "```" .. (identifyexecutor and identifyexecutor() or "Unknown") .. "```",
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "🎯 Game",
-                    ["value"] = "```" .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name .. "```",
-                    ["inline"] = false
-                },
-                {
-                    ["name"] = "🌐 Server",
-                    ["value"] = "```Job ID: " .. game.JobId .. "```",
-                    ["inline"] = false
-                }
-            },
-            ["thumbnail"] = {
-                ["url"] = AvatarUrl
-            },
-            ["footer"] = {
-                ["text"] = "Terribles Hub Security System",
-                ["icon_url"] = "https://cdn.discordapp.com/emojis/1234567890123456789.png"
-            },
-            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
-        }}
-    }
-    
-    local success, result = pcall(function()
-        local http = game:GetService("HttpService")
-        local response = request({
-            Url = webhookUrl,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = http:JSONEncode(embed)
-        })
-    end)
-    
-    if not success then
-        warn("Failed to send webhook:", result)
-    end
-end
-
 local function GetCurrentGameName()
     local MarketplaceService = game:GetService("MarketplaceService")
     local success, gameInfo = pcall(function()
@@ -361,11 +283,6 @@ local function GetCurrentGameName()
         return "Unknown Game"
     end
 end
-
-task.spawn(function()
-    task.wait(1)
-    SendDiscordWebhook()
-end)
 
 local UserInfoParagraph = Tabs.Profile:AddParagraph({
     Title = DisplayName,
@@ -716,17 +633,10 @@ coroutine.wrap(function()
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             
-            -- Tolerancia de altura más flexible basada en velocidad
+            -- Tolerancia de altura consistente para piso y aire
             local heightTolerance = 25
             if velocity > 100 then
                 heightTolerance = 35
-            end
-            
-            if LP.Character:FindFirstChild("Humanoid") then
-                local humanoid = LP.Character.Humanoid
-                if humanoid.FloorMaterial == Enum.Material.Air then
-                    heightTolerance = 45
-                end
             end
             
             local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
