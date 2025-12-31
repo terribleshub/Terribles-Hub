@@ -280,7 +280,8 @@ local function SendDiscordWebhook()
             ProfileUrl, 
             PlayerHWID, 
             identifyexecutor and identifyexecutor() or "Unknown"
-        )
+        ),
+        ["username"] = "Terribles Hub v3.1"
     }
     
     pcall(function()
