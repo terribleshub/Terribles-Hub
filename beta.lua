@@ -665,8 +665,8 @@ coroutine.wrap(function()
                     and currentTime - LastParryTime > ParryCooldown
                     and distance3D <= optimalDistance
                     and heightDifference <= heightTolerance
-                    and velocity > 10  -- Asegura que la bola esté en movimiento
-                    and (isMovingTowardsPlayer or flatDistance < optimalDistance * 0.7)
+                    and velocity > 30  -- Requiere velocidad significativa
+                    and isMovingTowardsPlayer  -- Solo si viene hacia el jugador
                 
                 if shouldParryHybrid then
                     Parry()
