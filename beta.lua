@@ -664,21 +664,11 @@ coroutine.wrap(function()
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             
-            -- Tolerancia de altura adaptativa
-            local heightTolerance = 25
-            if velocity > 100 then
-                heightTolerance = 50  -- Mayor tolerancia para velocidades altas
-            elseif velocity > 70 then
-                heightTolerance = 40
-            end
-            
-            -- Bonus de tolerancia si el jugador está en el aire
-            if LP.Character:FindFirstChild("Humanoid") then
-                local humanoid = LP.Character.Humanoid
-                if humanoid.FloorMaterial == Enum.Material.Air then
-                    heightTolerance = heightTolerance + 20
-                end
-            end
+            -- Sistema de tolerancia 3D dinámico basado en velocidad y distancia
+            local baseHeightTolerance = 30
+            local velocityHeightBonus = math.clamp(velocity / 5, 0, 40)
+            local distanceHeightBonus = math.clamp(distance3D / 10, 0, 25)
+            local heightTolerance = baseHeightTolerance + velocityHeightBonus + distanceHeightBonus
             
             local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
             
@@ -697,17 +687,14 @@ coroutine.wrap(function()
             
             if AutoParryEnabled then
                 local currentTime = tick()
-                
-                -- Sistema mejorado de detección
                 local isMovingTowardsPlayer = moveDir:Dot((PlayerPos - BallPos).Unit) > 0.3
                 
-                -- Condición principal: usa la distancia 3D como referencia principal
                 local shouldParryHybrid = not isBallWhite
                     and currentTime - LastParryTime > ParryCooldown
-                    and distance3D <= optimalDistance
+                    and distance3D <= (optimalDistance + (velocity * 0.15))
                     and heightDifference <= heightTolerance
-                    and velocity > 30  -- Requiere velocidad significativa
-                    and isMovingTowardsPlayer  -- Solo si viene hacia el jugador
+                    and velocity > 15
+                    and (isMovingTowardsPlayer or distance3D < optimalDistance * 0.6)
                 
                 if shouldParryHybrid then
                     Parry()
