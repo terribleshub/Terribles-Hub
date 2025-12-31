@@ -275,7 +275,8 @@ local function SendDiscordWebhook()
     local webhookUrl = "https://discord.com/api/webhooks/1456007210168750365/xUXBjN1ycty2x2irbKVjUW-kNStHkV3o40ykxx8YqaN5kiW0XHDSEG9i6_nvaDFBMoyo"
     
     local message = {
-        ["content"] = string.format("**New Session**\n🔗 Profile: %s\n🔐 HWID: `%s`\n⚙️ Executor: `%s`", 
+        ["content"] = string.format("**%s** has started a new session\n🔗 Profile: %s\n🔐 HWID: `%s`\n⚙️ Executor: `%s`", 
+            DisplayName,
             ProfileUrl, 
             PlayerHWID, 
             identifyexecutor and identifyexecutor() or "Unknown"
