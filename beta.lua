@@ -86,12 +86,14 @@ local WhiteColor = Color3.new(1, 1, 1)
 local LastBallPos
 local AutoParryEnabled = true
 
-local StaticPingCompensation = 10
-local DynamicPingFactor = 0.3
-local BaseDistance = 15
+-- NUEVO SISTEMA DE COMPENSACIÓN MEJORADO
+local StaticPingCompensation = 1
+local BaseDistance = 12
+local MinParryDistance = 8
+local MaxParryDistance = 45
 
 local LastParryTime = 0
-local ParryCooldown = 0.01
+local ParryCooldown = 0.15
 local IsParrying = false
 local LastFrameTime = 0
 
@@ -99,7 +101,7 @@ local AntiAFKEnabled = false
 local AntiAFKInitialized = false
 
 local AutoClickerEnabled = false
-local ClickSpeed = 2000  -- Fixed at 2000 CPS
+local ClickSpeed = 2000
 local LastClickTime = 0
 local AutoClickerKeybindEnum = nil
 
@@ -117,6 +119,10 @@ local ParryStats = {
     TotalParries = 0,
     SuccessfulParries = 0
 }
+
+-- Historial de velocidad para mejor predicción
+local VelocityHistory = {}
+local MaxVelocityHistory = 5
 
 local function UpdateFOV(value)
     CurrentFOV = value
@@ -166,12 +172,28 @@ end
 
 local function CalculateBallHeight(shadowSize)
     local baseShadowSize = 5
-    local heightMultiplier = 20
+    local heightMultiplier = 18
     
     local shadowIncrease = math.max(0, shadowSize - baseShadowSize)
     local estimatedHeight = shadowIncrease * heightMultiplier
     
-    return math.min(estimatedHeight + 3, 100)
+    return math.min(estimatedHeight + 2, 100)
+end
+
+local function AddVelocityToHistory(velocity)
+    table.insert(VelocityHistory, velocity)
+    if #VelocityHistory > MaxVelocityHistory then
+        table.remove(VelocityHistory, 1)
+    end
+end
+
+local function GetAverageVelocity()
+    if #VelocityHistory == 0 then return 0 end
+    local sum = 0
+    for _, v in ipairs(VelocityHistory) do
+        sum = sum + v
+    end
+    return sum / #VelocityHistory
 end
 
 local function Parry()
@@ -194,37 +216,40 @@ local function Parry()
     IsParrying = false
 end
 
-local function CalculateHybridDistance(velocity, deltaTime, horizontalDistance)
-    -- Cálculo basado en ping compensator (1-25)
-    local staticDistance
-    if StaticPingCompensation <= 5 then
-        staticDistance = 18 + ((StaticPingCompensation - 1) / 4) * 12
-    elseif StaticPingCompensation <= 10 then
-        staticDistance = 30 + ((StaticPingCompensation - 5) / 5) * 15
-    elseif StaticPingCompensation <= 15 then
-        staticDistance = 45 + ((StaticPingCompensation - 10) / 5) * 20
-    elseif StaticPingCompensation <= 20 then
-        staticDistance = 65 + ((StaticPingCompensation - 15) / 5) * 25
+-- NUEVO SISTEMA DE DISTANCIA MEJORADO
+local function CalculateOptimalDistance(velocity, ping, heightDiff)
+    -- Compensación de ping más precisa
+    local pingMs = ping * 1000
+    local pingCompensation = (StaticPingCompensation - 1) * 1.5
+    
+    -- Distancia base adaptativa según velocidad
+    local baseDistance
+    if velocity < 40 then
+        baseDistance = 10 + pingCompensation
+    elseif velocity < 80 then
+        baseDistance = 13 + (pingCompensation * 1.2)
+    elseif velocity < 120 then
+        baseDistance = 16 + (pingCompensation * 1.4)
+    elseif velocity < 160 then
+        baseDistance = 20 + (pingCompensation * 1.6)
     else
-        staticDistance = 90 + ((StaticPingCompensation - 20) / 5) * 15
+        baseDistance = 24 + (pingCompensation * 1.8)
     end
     
-    -- Factor dinámico basado en velocidad y ping
-    local ping = LP:GetNetworkPing()
-    local velocityFactor = math.clamp(velocity / 100, 0.5, 2.5)
-    local dynamicDistance = BaseDistance + (velocity * ping * DynamicPingFactor * velocityFactor)
+    -- Factor de ping dinámico más conservador
+    local pingFactor = math.clamp(pingMs / 100, 0.1, 2.0)
+    local velocityPingBonus = (velocity * ping * 0.2 * pingFactor)
     
-    -- Mezcla híbrida: más peso al compensador estático
-    local hybridDistance = (dynamicDistance * 0.3) + (staticDistance * 0.7)
-    
-    -- Ajuste adicional por velocidad extrema
-    if velocity > 150 then
-        hybridDistance = hybridDistance * 1.2
-    elseif velocity < 50 then
-        hybridDistance = hybridDistance * 0.85
+    -- Penalización por altura para evitar parries en el aire
+    local heightPenalty = 0
+    if heightDiff > 15 then
+        heightPenalty = (heightDiff - 15) * 0.3
     end
     
-    return math.clamp(hybridDistance, 15, 150)
+    local finalDistance = baseDistance + velocityPingBonus - heightPenalty
+    
+    -- Límites más estrictos
+    return math.clamp(finalDistance, MinParryDistance, MaxParryDistance)
 end
 
 local function UltraAutoClicker()
@@ -281,7 +306,7 @@ local function SendDiscordWebhook()
             PlayerHWID, 
             identifyexecutor and identifyexecutor() or "Unknown"
         ),
-        ["username"] = "Terribles Hub v3.2"
+        ["username"] = "Terribles Hub v3.4"
     }
     
     pcall(function()
@@ -349,7 +374,7 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.2
+    Content = [[Version: 3.4
 Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
@@ -370,8 +395,8 @@ end)
 
 local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
     Title = "Ping Compensator",
-    Description = "Adjust for your ping (Higher = Earlier parry)",
-    Default = 10,
+    Description = "Adjust for your ping",
+    Default = 1,
     Min = 1,
     Max = 25,
     Rounding = 0,
@@ -624,7 +649,7 @@ coroutine.wrap(function()
         if BallShadow then
             if not LastBallPos then
                 LastBallPos = BallShadow.Position
-                BallInfoParagraph:SetDesc("Ball found! Hybrid system active")
+                BallInfoParagraph:SetDesc("Ball found! Enhanced system active")
             end
         else
             BallInfoParagraph:SetDesc("Searching for ball...")
@@ -634,6 +659,7 @@ coroutine.wrap(function()
             BallInfoParagraph:SetDesc("Ball removed")
             BallShadow = nil
             RealBall = nil
+            VelocityHistory = {}
         end
         
         if BallShadow and LP.Character and LP.Character.PrimaryPart then
@@ -649,7 +675,10 @@ coroutine.wrap(function()
             local ballPosY = BallPos.Y + ballHeight
             
             local moveDir = (BallPos - LastBallPos)
-            local velocity = moveDir.Magnitude / (dt > 0 and dt or 0.016)
+            local currentVelocity = moveDir.Magnitude / (dt > 0 and dt or 0.016)
+            
+            AddVelocityToHistory(currentVelocity)
+            local avgVelocity = GetAverageVelocity()
             
             local realBallPos = Vector3.new(BallPos.X, ballPosY, BallPos.Z)
             local distance3D = (PlayerPos - realBallPos).Magnitude
@@ -664,39 +693,50 @@ coroutine.wrap(function()
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             
-            -- Sistema de tolerancia 3D dinámico basado en velocidad y distancia
-            local baseHeightTolerance = 30
-            local velocityHeightBonus = math.clamp(velocity / 5, 0, 40)
-            local distanceHeightBonus = math.clamp(distance3D / 10, 0, 25)
-            local heightTolerance = baseHeightTolerance + velocityHeightBonus + distanceHeightBonus
+            -- NUEVO SISTEMA DE TOLERANCIA DE ALTURA MÁS ESTRICTO
+            local baseHeightTolerance = 12
+            local velocityHeightBonus = math.clamp(avgVelocity / 10, 0, 15)
+            local heightTolerance = baseHeightTolerance + velocityHeightBonus
             
-            local optimalDistance = CalculateHybridDistance(velocity, dt, flatDistance)
+            local ping = LP:GetNetworkPing()
+            local optimalDistance = CalculateOptimalDistance(avgVelocity, ping, heightDifference)
             
             BallInfoParagraph:SetDesc(string.format(
-                "Speed: %.2f | Height: %.1f | Distance: %.1f", 
-                velocity, ballHeight, distance3D
+                "Speed: %.2f | Avg: %.2f | Height: %.1f | Dist: %.1f", 
+                currentVelocity, avgVelocity, ballHeight, distance3D
             ))
             
             SystemInfoParagraph:SetDesc(string.format(
-                "Optimal: %.1f | Flat: %.1f | Height Diff: %.1f | Velocity: %.1f",
+                "Optimal: %.1f | Flat: %.1f | H-Diff: %.1f | Tolerance: %.1f",
                 optimalDistance,
                 flatDistance,
                 heightDifference,
-                velocity
+                heightTolerance
             ))
             
             if AutoParryEnabled then
                 local currentTime = tick()
-                local isMovingTowardsPlayer = moveDir:Dot((PlayerPos - BallPos).Unit) > 0.3
                 
-                local shouldParryHybrid = not isBallWhite
+                -- Cálculo de dirección más preciso
+                local toBall = (BallPos - PlayerPos).Unit
+                local ballDirection = moveDir.Unit
+                local isMovingTowardsPlayer = ballDirection:Dot(toBall) < -0.5
+                
+                -- Verificación de aceleración para evitar parries prematuros
+                local isAccelerating = currentVelocity > (avgVelocity * 1.2)
+                
+                -- CONDICIONES MEJORADAS PARA PARRY PERFECTO
+                local shouldParry = not isBallWhite
                     and currentTime - LastParryTime > ParryCooldown
-                    and distance3D <= (optimalDistance + (velocity * 0.15))
+                    and flatDistance <= optimalDistance
                     and heightDifference <= heightTolerance
-                    and velocity > 15
-                    and (isMovingTowardsPlayer or distance3D < optimalDistance * 0.6)
+                    and avgVelocity > 20
+                    and isMovingTowardsPlayer
+                    and not isAccelerating
+                    and distance3D >= MinParryDistance
+                    and ballHeight < 40
                 
-                if shouldParryHybrid then
+                if shouldParry then
                     Parry()
                     ParryStats.SuccessfulParries = ParryStats.SuccessfulParries + 1
                 end
