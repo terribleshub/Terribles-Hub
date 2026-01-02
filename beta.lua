@@ -86,7 +86,6 @@ local WhiteColor = Color3.new(1, 1, 1)
 local LastBallPos
 local AutoParryEnabled = true
 
--- NUEVO SISTEMA DE COMPENSACIÓN MEJORADO
 local StaticPingCompensation = 1
 local BaseDistance = 12
 local MinParryDistance = 8
@@ -120,7 +119,6 @@ local ParryStats = {
     SuccessfulParries = 0
 }
 
--- Historial de velocidad para mejor predicción
 local VelocityHistory = {}
 local MaxVelocityHistory = 5
 
@@ -216,13 +214,10 @@ local function Parry()
     IsParrying = false
 end
 
--- NUEVO SISTEMA DE DISTANCIA MEJORADO
 local function CalculateOptimalDistance(velocity, ping, heightDiff)
-    -- Compensación de ping más precisa
     local pingMs = ping * 1000
     local pingCompensation = (StaticPingCompensation - 1) * 1.5
     
-    -- Distancia base adaptativa según velocidad
     local baseDistance
     if velocity < 40 then
         baseDistance = 10 + pingCompensation
@@ -236,11 +231,9 @@ local function CalculateOptimalDistance(velocity, ping, heightDiff)
         baseDistance = 24 + (pingCompensation * 1.8)
     end
     
-    -- Factor de ping dinámico más conservador
     local pingFactor = math.clamp(pingMs / 100, 0.1, 2.0)
     local velocityPingBonus = (velocity * ping * 0.2 * pingFactor)
     
-    -- Penalización por altura para evitar parries en el aire
     local heightPenalty = 0
     if heightDiff > 15 then
         heightPenalty = (heightDiff - 15) * 0.3
@@ -248,8 +241,42 @@ local function CalculateOptimalDistance(velocity, ping, heightDiff)
     
     local finalDistance = baseDistance + velocityPingBonus - heightPenalty
     
-    -- Límites más estrictos
     return math.clamp(finalDistance, MinParryDistance, MaxParryDistance)
+end
+
+-- Análisis de trayectoria 3D mejorado
+local function AnalyzeBallTrajectory(moveDir, dt, ballHeight)
+    -- Protección contra dt muy pequeños
+    local safeDt = math.max(dt, 0.001)
+    local horizontalSpeed = Vector3.new(moveDir.X, 0, moveDir.Z).Magnitude / safeDt
+    local verticalSpeed = math.abs(moveDir.Y) / safeDt
+    local totalSpeed = moveDir.Magnitude / safeDt
+    
+    -- Detectar si la bola está realmente alta en el aire
+    local isReallyHigh = ballHeight > 20
+    
+    -- Caída vertical pura (casi sin movimiento horizontal)
+    local isVerticalDrop = verticalSpeed > horizontalSpeed * 2 and moveDir.Y < 0 and isReallyHigh
+    
+    -- Tiro aéreo (bola alta con velocidad)
+    local isAerial = isReallyHigh and totalSpeed > 30
+    
+    -- Tiro alto con ángulo
+    local isHighShot = math.abs(moveDir.Y) > horizontalSpeed and ballHeight > 15
+    
+    -- Diagonal (movimiento mixto sin ser caída pura)
+    local isDiagonal = horizontalSpeed > 15 and verticalSpeed > 8 and not isVerticalDrop and ballHeight > 10
+    
+    return {
+        isAerial = isAerial,
+        isVerticalDrop = isVerticalDrop,
+        isHighShot = isHighShot,
+        isDiagonal = isDiagonal,
+        horizontalSpeed = horizontalSpeed,
+        verticalSpeed = verticalSpeed,
+        totalSpeed = totalSpeed,
+        isReallyHigh = isReallyHigh
+    }
 end
 
 local function UltraAutoClicker()
@@ -306,7 +333,7 @@ local function SendDiscordWebhook()
             PlayerHWID, 
             identifyexecutor and identifyexecutor() or "Unknown"
         ),
-        ["username"] = "Terribles Hub v3.4"
+        ["username"] = "Terribles Hub v3.5"
     }
     
     pcall(function()
@@ -374,9 +401,10 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.4
+    Content = [[Version: 3.5
 Creator: TheTerribles Hub
-Status: Licensed ✓]]
+Status: Licensed ✓
+Update: Enhanced 3D Detection]]
 })
 
 local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", {
@@ -511,6 +539,11 @@ local SystemInfoParagraph = Tabs.Info:AddParagraph({
     Content = "Distance: Calculating..."
 })
 
+local TrajectoryInfoParagraph = Tabs.Info:AddParagraph({
+    Title = "Trajectory Analysis",
+    Content = "Analyzing..."
+})
+
 local ExploitsSection = Tabs.Exploits:AddSection("Additional Features")
 
 Tabs.Exploits:AddParagraph({
@@ -640,7 +673,7 @@ coroutine.wrap(function()
         if BallShadow then
             if not LastBallPos then
                 LastBallPos = BallShadow.Position
-                BallInfoParagraph:SetDesc("Ball found! Enhanced system active")
+                BallInfoParagraph:SetDesc("Ball found! Enhanced 3D system active")
             end
         else
             BallInfoParagraph:SetDesc("Searching for ball...")
@@ -671,6 +704,9 @@ coroutine.wrap(function()
             AddVelocityToHistory(currentVelocity)
             local avgVelocity = GetAverageVelocity()
             
+            -- Análisis completo de trayectoria
+            local trajectory = AnalyzeBallTrajectory(moveDir, dt, ballHeight)
+            
             local realBallPos = Vector3.new(BallPos.X, ballPosY, BallPos.Z)
             local distance3D = (PlayerPos - realBallPos).Magnitude
             
@@ -684,9 +720,19 @@ coroutine.wrap(function()
             
             local heightDifference = math.abs(PlayerPos.Y - ballPosY)
             
-            -- NUEVO SISTEMA DE TOLERANCIA DE ALTURA MÁS ESTRICTO
-            local baseHeightTolerance = 12
-            local velocityHeightBonus = math.clamp(avgVelocity / 10, 0, 15)
+            -- Tolerancia adaptativa según altura real de la bola
+            local baseHeightTolerance = 15
+            local velocityHeightBonus = math.clamp(avgVelocity / 10, 0, 12)
+            
+            -- Si la bola está muy alta, ser más flexible
+            if ballHeight > 25 then
+                baseHeightTolerance = 30
+                velocityHeightBonus = velocityHeightBonus * 2
+            elseif trajectory.isAerial or trajectory.isHighShot then
+                baseHeightTolerance = 22
+                velocityHeightBonus = velocityHeightBonus * 1.5
+            end
+            
             local heightTolerance = baseHeightTolerance + velocityHeightBonus
             
             local ping = LP:GetNetworkPing()
@@ -705,27 +751,80 @@ coroutine.wrap(function()
                 heightTolerance
             ))
             
+            -- Información de trayectoria
+            local trajectoryType = "Ground"
+            if trajectory.isVerticalDrop then
+                trajectoryType = "Vertical Drop"
+            elseif trajectory.isDiagonal then
+                trajectoryType = "Diagonal"
+            elseif trajectory.isHighShot then
+                trajectoryType = "High Shot"
+            elseif trajectory.isAerial then
+                trajectoryType = "Aerial"
+            end
+            
+            TrajectoryInfoParagraph:SetDesc(string.format(
+                "Type: %s | H-Speed: %.1f | V-Speed: %.1f | Total: %.1f",
+                trajectoryType,
+                trajectory.horizontalSpeed,
+                trajectory.verticalSpeed,
+                trajectory.totalSpeed
+            ))
+            
             if AutoParryEnabled then
                 local currentTime = tick()
                 
-                -- Cálculo de dirección más preciso
                 local toBall = (BallPos - PlayerPos).Unit
                 local ballDirection = moveDir.Unit
-                local isMovingTowardsPlayer = ballDirection:Dot(toBall) < -0.5
                 
-                -- Verificación de aceleración para evitar parries prematuros
-                local isAccelerating = currentVelocity > (avgVelocity * 1.2)
+                -- Sistema simplificado de detección
+                local isMovingTowardsPlayer = false
+                local lastDistance = LastBallPos and (PlayerPos - Vector3.new(LastBallPos.X, PlayerPos.Y, LastBallPos.Z)).Magnitude or flatDistance
+                local isGettingCloser = flatDistance < lastDistance + 2
                 
-                -- CONDICIONES MEJORADAS PARA PARRY PERFECTO
+                if trajectory.isVerticalDrop then
+                    -- Caída vertical: solo verificar distancia horizontal
+                    isMovingTowardsPlayer = flatDistance < optimalDistance * 1.6
+                elseif ballHeight > 20 then
+                    -- Bola muy alta: verificar si se está acercando horizontalmente
+                    isMovingTowardsPlayer = isGettingCloser or flatDistance < optimalDistance * 1.4
+                elseif trajectory.isDiagonal then
+                    -- Diagonal: verificar acercamiento general
+                    local horizontalApproach = ballDirection:Dot(toBall) < -0.2
+                    isMovingTowardsPlayer = horizontalApproach or isGettingCloser
+                else
+                    -- Tiro normal: verificación estándar
+                    isMovingTowardsPlayer = ballDirection:Dot(toBall) < -0.4 or isGettingCloser
+                end
+                
+                local isAccelerating = currentVelocity > (avgVelocity * 1.3)
+                
+                -- Distancia adaptativa
+                local effectiveDistance = flatDistance
+                local effectiveOptimalDistance = optimalDistance
+                
+                if trajectory.isVerticalDrop then
+                    effectiveOptimalDistance = optimalDistance * 1.5
+                elseif ballHeight > 25 then
+                    effectiveDistance = flatDistance * 0.9
+                    effectiveOptimalDistance = optimalDistance * 1.4
+                elseif trajectory.isAerial or trajectory.isHighShot then
+                    effectiveDistance = flatDistance * 0.95
+                    effectiveOptimalDistance = optimalDistance * 1.25
+                elseif trajectory.isDiagonal then
+                    effectiveDistance = (distance3D + flatDistance) / 2
+                    effectiveOptimalDistance = optimalDistance * 1.15
+                end
+                
+                -- Condiciones simplificadas y más permisivas
                 local shouldParry = not isBallWhite
                     and currentTime - LastParryTime > ParryCooldown
-                    and flatDistance <= optimalDistance
-                    and heightDifference <= heightTolerance
-                    and avgVelocity > 20
+                    and effectiveDistance <= effectiveOptimalDistance
+                    and avgVelocity > 18
                     and isMovingTowardsPlayer
                     and not isAccelerating
-                    and distance3D >= MinParryDistance
-                    and ballHeight < 40
+                    and flatDistance >= MinParryDistance * 0.8
+                    and (ballHeight > 15 or heightDifference <= heightTolerance)
                 
                 if shouldParry then
                     Parry()
