@@ -379,11 +379,6 @@ Creator: TheTerribles Hub
 Status: Licensed ✓]]
 })
 
-Tabs.Main:AddParagraph({
-    Title = "Credits",
-    Content = "By TheTerribles Hub"
-})
-
 local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", {
     Title = "Auto Parry",
     Default = true
@@ -404,8 +399,6 @@ local PingCompensatorSlider = Tabs.Main:AddSlider("PingCompensator", {
         StaticPingCompensation = Value
     end
 })
-
-local AutoClickerSection = Tabs.Main:AddSection("Auto Clicker")
 
 local AutoClickerToggle = Tabs.Main:AddToggle("AutoClickerToggle", {
     Title = "Auto Clicker",
@@ -432,8 +425,6 @@ local AutoClickerKeybind = Tabs.Main:AddKeybind("AutoClickerKeybind", {
 
 AutoClickerKeybind:OnClick(function()
 end)
-
-local AntiAFKSection = Tabs.Main:AddSection("Anti-AFK")
 
 local AntiAFKToggle = Tabs.Main:AddToggle("AntiAFKToggle", {
     Title = "Anti-AFK",
