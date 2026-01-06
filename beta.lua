@@ -55,98 +55,114 @@ end
 -- ==================== FIXED LIBRARY LOADING ====================
 print("=== Terribles Hub - Loading Libraries ===")
 
-local function SafeLoadstring(url, libraryName)
+-- Test HTTP functionality first
+print("Testing HTTP capabilities...")
+local httpWorks = pcall(function()
+    game:HttpGet("https://httpbin.org/get", true)
+end)
+
+if not httpWorks then
+    warn("⚠️ HTTP requests may not be working properly")
+    KickPlayer([[
+HTTP TEST FAILED
+
+Your executor does not support HTTP requests properly.
+
+Solutions:
+1. Use Solara executor (RECOMMENDED)
+2. Use Wave executor
+3. Update your current executor
+4. Enable HTTP in executor settings
+
+Your executor: ]] .. (identifyexecutor and identifyexecutor() or "Unknown"))
+    return
+end
+print("✅ HTTP test passed")
+
+local function SafeLoadstringWithFallback(urls, libraryName)
     print("Loading " .. libraryName .. "...")
     
-    local success, response = pcall(function()
-        return game:HttpGet(url, true)
-    end)
-    
-    if not success then
-        warn("❌ Failed to fetch " .. libraryName)
-        warn("Error: " .. tostring(response))
-        KickPlayer([[
-Failed to load required libraries.
-
-Library: ]] .. libraryName .. [[
-
-Error: Network request failed
-
-Possible solutions:
-1. Check your internet connection
-2. Try a different executor (recommended: Solara, Wave)
-3. Make sure HTTP requests are enabled
-4. Contact support if issue persists
-]])
-        return nil
+    for i, url in ipairs(urls) do
+        print("Trying URL " .. i .. "/" .. #urls .. "...")
+        
+        local success, response = pcall(function()
+            return game:HttpGet(url, true)
+        end)
+        
+        if success and response and response ~= "" and not response:match("404") then
+            print("✅ Successfully fetched from URL " .. i)
+            print("Response length: " .. #response .. " characters")
+            
+            -- Verify it's actually Lua code
+            if not response:match("function") and not response:match("local") and not response:match("return") then
+                warn("⚠️ Response doesn't look like Lua code")
+                if i < #urls then
+                    print("Trying next URL...")
+                    task.wait(0.5)
+                    continue
+                end
+            end
+            
+            local loadSuccess, compiledScript = pcall(function()
+                return loadstring(response)
+            end)
+            
+            if loadSuccess and compiledScript then
+                print("✅ Successfully compiled")
+                
+                local executeSuccess, library = pcall(compiledScript)
+                
+                if executeSuccess and library then
+                    print("✅ " .. libraryName .. " loaded successfully!")
+                    return library
+                else
+                    warn("❌ Execution failed: " .. tostring(library))
+                end
+            else
+                warn("❌ Compilation failed: " .. tostring(compiledScript))
+            end
+        else
+            warn("❌ Failed to fetch from URL " .. i)
+            if success then
+                warn("Response: " .. tostring(response):sub(1, 100))
+            else
+                warn("Error: " .. tostring(response))
+            end
+        end
+        
+        if i < #urls then
+            print("Trying next URL...")
+            task.wait(0.5)
+        end
     end
     
-    if not response or response == "" or response == "404: Not Found" then
-        warn("❌ Empty or invalid response for " .. libraryName)
-        KickPlayer([[
-Failed to load required libraries.
+    warn("❌ All URLs failed for " .. libraryName)
+    KickPlayer([[
+Failed to load ]] .. libraryName .. [[
 
-Library: ]] .. libraryName .. [[
+All download sources failed.
 
-Error: Empty or invalid response from server
+Executor: ]] .. (identifyexecutor and identifyexecutor() or "Unknown") .. [[
 
-Possible solutions:
-1. GitHub may be down or blocked
-2. Try again in a few minutes
-3. Use a different executor
-4. Contact support for alternative download links
-]])
-        return nil
-    end
-    
-    local loadSuccess, compiledScript = pcall(function()
-        return loadstring(response)
-    end)
-    
-    if not loadSuccess or not compiledScript then
-        warn("❌ Failed to compile " .. libraryName)
-        warn("Compile error: " .. tostring(compiledScript))
-        KickPlayer([[
-Failed to compile required libraries.
+Solutions:
+1. Use Solara executor (MOST RELIABLE)
+2. Use Wave executor
+3. Check if GitHub is accessible
+4. Try again in a few minutes
+5. Contact support on Discord
 
-Library: ]] .. libraryName .. [[
-
-Error: Your executor may not support this script
-
-Possible solutions:
-1. Update your executor to the latest version
-2. Try a different executor (recommended: Solara, Wave)
-3. Make sure 'loadstring' is supported
-4. Contact support with this error message
-]])
-        return nil
-    end
-    
-    local executeSuccess, library = pcall(compiledScript)
-    
-    if not executeSuccess then
-        warn("❌ Failed to execute " .. libraryName)
-        warn("Execute error: " .. tostring(library))
-        KickPlayer([[
-Failed to initialize required libraries.
-
-Library: ]] .. libraryName .. [[
-
-Error: Execution failed
-
-Please contact support with this error message.
-]])
-        return nil
-    end
-    
-    print("✅ " .. libraryName .. " loaded successfully")
-    return library
+Error: Could not load from any source]])
+    return nil
 end
 
-local Fluent = SafeLoadstring(
+-- Try multiple URLs for Fluent
+local fluentUrls = {
     "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua",
-    "Fluent UI"
-)
+    "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/src/init.lua",
+    "https://raw.githubusercontent.com/dawid-scripts/Fluent/main/src/init.lua"
+}
+
+local Fluent = SafeLoadstringWithFallback(fluentUrls, "Fluent UI")
 
 if not Fluent then
     return
