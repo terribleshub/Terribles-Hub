@@ -52,9 +52,128 @@ Thank you for your interest!
     return
 end
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+-- ==================== FIXED LIBRARY LOADING ====================
+print("=== Terribles Hub - Loading Libraries ===")
+
+local function SafeLoadstring(url, libraryName)
+    print("Loading " .. libraryName .. "...")
+    
+    local success, response = pcall(function()
+        return game:HttpGet(url, true)
+    end)
+    
+    if not success then
+        warn("❌ Failed to fetch " .. libraryName)
+        warn("Error: " .. tostring(response))
+        KickPlayer([[
+Failed to load required libraries.
+
+Library: ]] .. libraryName .. [[
+
+Error: Network request failed
+
+Possible solutions:
+1. Check your internet connection
+2. Try a different executor (recommended: Solara, Wave)
+3. Make sure HTTP requests are enabled
+4. Contact support if issue persists
+]])
+        return nil
+    end
+    
+    if not response or response == "" or response == "404: Not Found" then
+        warn("❌ Empty or invalid response for " .. libraryName)
+        KickPlayer([[
+Failed to load required libraries.
+
+Library: ]] .. libraryName .. [[
+
+Error: Empty or invalid response from server
+
+Possible solutions:
+1. GitHub may be down or blocked
+2. Try again in a few minutes
+3. Use a different executor
+4. Contact support for alternative download links
+]])
+        return nil
+    end
+    
+    local loadSuccess, compiledScript = pcall(function()
+        return loadstring(response)
+    end)
+    
+    if not loadSuccess or not compiledScript then
+        warn("❌ Failed to compile " .. libraryName)
+        warn("Compile error: " .. tostring(compiledScript))
+        KickPlayer([[
+Failed to compile required libraries.
+
+Library: ]] .. libraryName .. [[
+
+Error: Your executor may not support this script
+
+Possible solutions:
+1. Update your executor to the latest version
+2. Try a different executor (recommended: Solara, Wave)
+3. Make sure 'loadstring' is supported
+4. Contact support with this error message
+]])
+        return nil
+    end
+    
+    local executeSuccess, library = pcall(compiledScript)
+    
+    if not executeSuccess then
+        warn("❌ Failed to execute " .. libraryName)
+        warn("Execute error: " .. tostring(library))
+        KickPlayer([[
+Failed to initialize required libraries.
+
+Library: ]] .. libraryName .. [[
+
+Error: Execution failed
+
+Please contact support with this error message.
+]])
+        return nil
+    end
+    
+    print("✅ " .. libraryName .. " loaded successfully")
+    return library
+end
+
+local Fluent = SafeLoadstring(
+    "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua",
+    "Fluent UI"
+)
+
+if not Fluent then
+    return
+end
+
+local SaveManager = SafeLoadstring(
+    "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua",
+    "SaveManager"
+)
+
+if not SaveManager then
+    return
+end
+
+local InterfaceManager = SafeLoadstring(
+    "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua",
+    "InterfaceManager"
+)
+
+if not InterfaceManager then
+    return
+end
+
+print("=== All Libraries Loaded Successfully ===")
+task.wait(0.5)
+
+-- ==================== MAIN SCRIPT CONTINUES ====================
 
 local Window = Fluent:CreateWindow({
     Title = "Terribles Hub - Death Ball",
@@ -398,10 +517,10 @@ local ScriptInfoSection = Tabs.Profile:AddSection("Script Information")
 
 Tabs.Profile:AddParagraph({
     Title = "Death Ball Auto Parry",
-    Content = [[Version: 3.5
+    Content = [[Version: 3.5.1 (Fixed)
 Creator: TheTerribles Hub
 Status: Licensed ✓
-Update: Enhanced 3D Detection]]
+Update: Enhanced Error Handling]]
 })
 
 local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", {
