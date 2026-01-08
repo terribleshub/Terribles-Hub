@@ -106,7 +106,10 @@ end
 
 -- Loop principal de movimiento
 local function MovementLoop()
-    if not IsEnabled then return end
+    if not IsEnabled then 
+        print("[AutoReady] Not enabled")
+        return 
+    end
     
     local currentTime = tick()
     
@@ -118,8 +121,11 @@ local function MovementLoop()
     
     -- Verificar que el personaje exista
     if not LP.Character or not LP.Character.PrimaryPart then
+        print("[AutoReady] No character or PrimaryPart")
         return
     end
+    
+    print("[AutoReady] Loop running...")
     
     local inGame = IsInGame()
     
@@ -153,10 +159,15 @@ local function MovementLoop()
     end
     
     -- ESTÁ EN LOBBY
+    local distance = (ReadyCoordinates - LP.Character.PrimaryPart.Position).Magnitude
+    
+    -- Debug temporal
+    if tick() % 2 < 0.1 then -- cada 2 segundos aprox
+        print("[AutoReady] ShouldAutoWalk:", ShouldAutoWalk, "Distance:", math.floor(distance), "Walking:", IsWalking)
+    end
+    
     -- Solo caminar si ShouldAutoWalk está activo
     if ShouldAutoWalk then
-        local distance = (ReadyCoordinates - LP.Character.PrimaryPart.Position).Magnitude
-        
         if distance > ArrivalThreshold then
             IsWalking = true
             MoveTowardsTarget()
@@ -178,20 +189,42 @@ end
 -- Función para iniciar el Auto Ready
 function AutoReadyModule:Start()
     if IsEnabled then
+        print("[AutoReady] Already enabled")
         return
     end
+    
+    print("[AutoReady] Starting module...")
     
     IsEnabled = true
     IsWalking = false
     LastPosition = nil
     StuckCheckTime = 0
     LastUpdateTime = 0
-    ShouldAutoWalk = false
     LastGameState = IsInGame()
+    
+    print("[AutoReady] InGame status:", LastGameState)
+    
+    -- Si está en game al iniciar, no auto-caminar
+    -- Si está en lobby al iniciar, verificar distancia
+    if LastGameState then
+        ShouldAutoWalk = false
+        print("[AutoReady] In game, ShouldAutoWalk = false")
+    else
+        -- Está en lobby, verificar si está lejos de las coordenadas
+        if LP.Character and LP.Character.PrimaryPart then
+            local distance = (ReadyCoordinates - LP.Character.PrimaryPart.Position).Magnitude
+            ShouldAutoWalk = distance > ArrivalThreshold
+            print("[AutoReady] In lobby, distance:", math.floor(distance), "ShouldAutoWalk:", ShouldAutoWalk)
+        else
+            ShouldAutoWalk = true
+            print("[AutoReady] No character, ShouldAutoWalk = true")
+        end
+    end
     
     task.wait(0.1)
     
     MovementConnection = RunService.Heartbeat:Connect(MovementLoop)
+    print("[AutoReady] Connection established")
 end
 
 -- Función para detener el Auto Ready
