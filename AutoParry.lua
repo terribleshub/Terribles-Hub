@@ -140,49 +140,40 @@ function AutoParryModule:ProcessFrame(dt)
         local velocity = (currentPos - self.PreviousPosition).Magnitude / dt
         local ping = self.LP:GetNetworkPing()
         
-        -- Check if ball is coming from above (aerial/drop shot)
-        local verticalMovement = currentPos.Y - self.PreviousPosition.Y
-        local isComingFromAbove = heightDifference < 0 and verticalMovement < -0.5
-        
         -- Dynamic distance calculation with ping compensation
         local dynamicDistance = self.BaseDistance + (velocity * ping * self.VelocityMultiplier)
         
-        -- Reduce distance significantly for aerial shots coming from above
-        if isComingFromAbove then
-            local heightPenalty = math.abs(heightDifference) * 0.4
-            dynamicDistance = dynamicDistance - heightPenalty
-            -- Ensure minimum distance for aerial shots
-            dynamicDistance = math.max(dynamicDistance, self.BaseDistance * 0.6)
-        end
-        
-        -- Flat distance (ignore Y axis)
-        local flatDistance = (Vector3.new(rootPart.Position.X, 0, rootPart.Position.Z) - Vector3.new(currentPos.X, 0, currentPos.Z)).Magnitude
+        -- Use 3D distance instead of flat distance for accurate parrying from all angles
+        local distance3D = (rootPart.Position - currentPos).Magnitude
         
         -- Check ball color (must not be white)
         local ballColor = self:GetBallColor(self.BallObject)
         local isBallWhite = ballColor == self.WhiteColor
         
-        -- Auto Parry Logic
+        -- Auto Parry Logic - Use 3D distance for consistent parrying from all directions
         if not isBallWhite then
-            if flatDistance <= dynamicDistance and (tick() - self.LastParryTime) > self.MinParryCooldown then
+            if distance3D <= dynamicDistance and (tick() - self.LastParryTime) > self.MinParryCooldown then
                 self:TriggerParry()
             end
         end
         
         self.PreviousPosition = currentPos
         
+        -- Calculate flat distance for UI display only
+        local flatDistance = (Vector3.new(rootPart.Position.X, 0, rootPart.Position.Z) - Vector3.new(currentPos.X, 0, currentPos.Z)).Magnitude
+        
         -- Return data for UI
         return {
             velocity = velocity,
             flatDistance = flatDistance,
+            distance3D = distance3D,
             height = height,
             heightDifference = heightDifference,
             dynamicDistance = dynamicDistance,
             ping = ping,
             ballColor = ballColor,
             ballFound = true,
-            ignored = false,
-            isComingFromAbove = isComingFromAbove
+            ignored = false
         }
     end
     
