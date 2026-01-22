@@ -23,7 +23,7 @@ function AutoParryModule.new()
     -- Settings
     self.Enabled = false
     self.BaseDistance = 15
-    self.VelocityMultiplier = 0.3
+    self.PingCompensation = 1.0  -- Valor directo del slider (1-25)
     self.MinParryCooldown = 0.01
     self.HeightIgnoreThreshold = 20
     
@@ -140,8 +140,10 @@ function AutoParryModule:ProcessFrame(dt)
         local velocity = (currentPos - self.PreviousPosition).Magnitude / dt
         local ping = self.LP:GetNetworkPing()
         
-        -- Dynamic distance calculation with ping compensation
-        local dynamicDistance = self.BaseDistance + (velocity * ping * self.VelocityMultiplier)
+        -- Dynamic distance calculation with direct ping compensation
+        -- PingCompensation acts as additional studs to add
+        local pingBonus = self.PingCompensation
+        local dynamicDistance = self.BaseDistance + pingBonus
         
         -- Use 3D distance instead of flat distance for accurate parrying from all angles
         local distance3D = (rootPart.Position - currentPos).Magnitude
@@ -217,18 +219,15 @@ function AutoParryModule:SetBaseDistance(value)
     self.BaseDistance = math.clamp(value, 10, 30)
 end
 
--- Set velocity multiplier (ping compensation)
-function AutoParryModule:SetVelocityMultiplier(value)
-    value = tonumber(value) or 0.3
-    self.VelocityMultiplier = math.clamp(value, 0.1, 1.0)
-end
-
--- Set ping compensation (compatible con valores 1-25 del slider)
+-- Set ping compensation (valores 1-25 del slider = studs adicionales)
 function AutoParryModule:SetPingCompensation(value)
     value = tonumber(value) or 1
-    -- Convierte el rango 1-25 a 0.1-1.0
-    local normalizedValue = math.clamp(value / 25, 0.1, 1.0)
-    self.VelocityMultiplier = normalizedValue
+    self.PingCompensation = math.clamp(value, 1, 25)
+end
+
+-- Set velocity multiplier (legacy - redirige a SetPingCompensation)
+function AutoParryModule:SetVelocityMultiplier(value)
+    self:SetPingCompensation(value)
 end
 
 -- Set height ignore threshold
