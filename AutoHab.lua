@@ -61,6 +61,11 @@ function AutoHabModule.new(autoParryModule)
         FailedAttempts = 0
     }
     
+    -- Debug control
+    self.LastDebugMessage = ""
+    self.DebugMessageCount = 0
+    self.LastCooldownPercent = -1
+    
     -- Connections
     self.Connection = nil
     self.CooldownConnection = nil
@@ -73,6 +78,16 @@ end
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 🔍 DETECCIÓN DE PERSONAJE
 -- ═══════════════════════════════════════════════════════════════════════════
+
+function AutoHabModule:DebugPrint(message, forceShow)
+    if forceShow or message ~= self.LastDebugMessage then
+        print(message)
+        self.LastDebugMessage = message
+        self.DebugMessageCount = 0
+    else
+        self.DebugMessageCount = self.DebugMessageCount + 1
+    end
+end
 
 function AutoHabModule:IsCharacterGui(text)
     return string.match(text, ".+%s~%sLvl%.%s%d+") ~= nil
@@ -98,7 +113,7 @@ function AutoHabModule:UpdateCurrentCharacter()
     if not self.CharacterGui then
         self.CharacterGui = self:FindCharacterGui()
         if not self.CharacterGui then
-            print("[AutoHab] ❌ No se encontró GUI de personaje")
+            self:DebugPrint("[AutoHab] ❌ No se encontró GUI de personaje")
             return false
         end
         print("[AutoHab] ✅ GUI encontrada:", self.CharacterGui.Text)
@@ -246,7 +261,6 @@ function AutoHabModule:GetAvailableAbility()
     
     for _, keyCode in ipairs(self.CharacterAbilities) do
         if not self:IsAbilityOnCooldown(keyCode) then
-            print("[AutoHab] 💫 Habilidad disponible encontrada:", keyCode.Name)
             return keyCode
         end
     end
@@ -261,7 +275,7 @@ end
 function AutoHabModule:ActivateAbility(keyCode)
     if not keyCode then return false end
     
-    print("[AutoHab] ⚡ Enviando input para:", keyCode.Name)
+    print("[AutoHab] ⚡ Activando habilidad:", keyCode.Name)
     
     VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
     task.wait(0.05)
@@ -290,12 +304,21 @@ function AutoHabModule:GetDeflectCooldownProgress()
     -- El cooldown usa Size.Y.Scale para mostrar el progreso
     -- Va de 1 (inicio) a 0 (fin)
     local cooldownSize = self.DeflectCooldownFrame.Size.Y.Scale
-    print("[AutoHab] 📊 Cooldown progress:", math.floor(cooldownSize * 100) .. "%")
+    local currentPercent = math.floor(cooldownSize * 100)
+    
+    -- Solo mostrar cada 10% de cambio
+    if math.abs(currentPercent - self.LastCooldownPercent) >= 10 then
+        print("[AutoHab] 📊 Cooldown progress:", currentPercent .. "%")
+        self.LastCooldownPercent = currentPercent
+    end
+    
     return cooldownSize
 end
 
 function AutoHabModule:GetBallData()
-    if not self.AutoParry then return nil end
+    if not self.AutoParry then 
+        return nil 
+    end
     
     local data = self.AutoParry:ProcessFrame(0.016)
     
@@ -303,13 +326,15 @@ function AutoHabModule:GetBallData()
         return nil
     end
     
-    return data
+    -- Verificar si la bola está roja (cerca del jugador)
+    local isRed = data.distance and data.distance <= 50 -- Ajusta este valor según sea necesario
+    
+    return data, isRed
 end
 
 function AutoHabModule:ShouldActivateAbility()
     -- Verificar que hay personaje configurado
     if not self.CurrentCharacter or #self.CharacterAbilities == 0 then
-        print("[AutoHab] ❌ Sin personaje o sin habilidades configuradas")
         return false
     end
     
@@ -322,36 +347,38 @@ function AutoHabModule:ShouldActivateAbility()
         return false
     end
     
-    -- Verificar que estamos en la ventana de activación (últimos 5% del cooldown)
+    -- Verificar que estamos en la ventana de activación (últimos 20% del cooldown)
     if cooldownProgress > self.AbilityActivationThreshold then
-        print("[AutoHab] ⏳ Esperando ventana de activación... (" .. math.floor(cooldownProgress * 100) .. "% > " .. math.floor(self.AbilityActivationThreshold * 100) .. "%)")
         return false
     end
     
-    print("[AutoHab] ✨ ¡Ventana de activación alcanzada! (" .. math.floor(cooldownProgress * 100) .. "%)")
+    print("[AutoHab] ✨ ¡Ventana de activación alcanzada! (" .. math.floor(cooldownProgress * 100) .. "% <= 20%)")
     
     -- Verificar que no hemos usado habilidad en este cooldown
     if self.AbilityUsedInCooldown then
-        print("[AutoHab] ⚠️ Ya se usó habilidad en este cooldown")
         return false
     end
     
-    -- Verificar que la bola sigue viniendo
-    local ballData = self:GetBallData()
+    -- Verificar que la bola sigue viniendo Y está roja (cerca)
+    local ballData, isRed = self:GetBallData()
     if not ballData then
-        print("[AutoHab] ❌ No hay bola detectada")
+        print("[AutoHab] ⚠️ No hay bola detectada en ventana de activación")
         return false
     end
     
-    print("[AutoHab] ✅ Bola detectada")
+    if not isRed then
+        print("[AutoHab] ⚠️ Bola detectada pero aún no está roja (distancia: " .. (ballData.distance or "N/A") .. ")")
+        return false
+    end
+    
+    print("[AutoHab] 🔴 Bola ROJA detectada (distancia: " .. (ballData.distance or "N/A") .. ")")
     
     -- Verificar que hay habilidad disponible
-    if not self:GetAvailableAbility() then
+    local availableAbility = self:GetAvailableAbility()
+    if not availableAbility then
         print("[AutoHab] ❌ Todas las habilidades en cooldown")
         return false
     end
-    
-    print("[AutoHab] ✅ Habilidad disponible encontrada")
     
     -- Guardar el tamaño actual para detectar cambios
     self.LastCooldownSize = cooldownProgress
@@ -366,7 +393,7 @@ end
 function AutoHabModule:ProcessFrame()
     if not self.Enabled then return end
     
-    -- Actualizar personaje actual
+    -- Actualizar personaje actual (solo la primera vez o si cambia)
     self:UpdateCurrentCharacter()
     
     -- Verificar si debemos activar habilidad
@@ -374,13 +401,11 @@ function AutoHabModule:ProcessFrame()
         local ability = self:GetAvailableAbility()
         
         if ability then
-            print("[AutoHab] 🚀 ¡ACTIVANDO HABILIDAD!", ability.Name)
+            print("[AutoHab] 🚀 ACTIVANDO:", ability.Name)
             self:ActivateAbility(ability)
             self.AbilityUsedInCooldown = true
             self.Stats.SuccessfulDeflects = self.Stats.SuccessfulDeflects + 1
-            print("[AutoHab] ✅ Habilidad activada exitosamente")
         else
-            print("[AutoHab] ❌ Error: No hay habilidad disponible")
             self.Stats.FailedAttempts = self.Stats.FailedAttempts + 1
         end
     end
