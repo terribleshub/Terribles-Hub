@@ -46,7 +46,7 @@ function AutoHabModule.new(autoParryModule)
     -- Deflect button cooldown tracking
     self.DeflectButton = nil
     self.DeflectCooldownFrame = nil
-    self.AbilityActivationThreshold = 0.05 -- Activar cuando el cooldown esté al 5% o menos
+    self.AbilityActivationThreshold = 0.20 -- Activar cuando el cooldown esté al 20% o menos
     self.AbilityUsedInCooldown = false
     self.LastCooldownSize = 0
     
