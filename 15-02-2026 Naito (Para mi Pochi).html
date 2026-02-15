@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Para ti Pochi</title>
+  <style>
+    /* Modal de bienvenida mejorado */
+    #modal-bienvenida {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: radial-gradient(ellipse at center, rgba(75, 0, 130, 0.95), rgba(0, 0, 0, 0.98));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.7s;
+    }
+    #modal-bienvenida.oculto {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #modal-bienvenida .contenido {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(75, 0, 130, 0.4));
+      border-radius: 30px;
+      border: 3px solid rgba(255, 105, 180, 0.6);
+      box-shadow: 0 0 60px rgba(255, 105, 180, 0.8), inset 0 0 40px rgba(138, 43, 226, 0.3);
+      padding: 3rem 3rem 2.5rem 3rem;
+      text-align: center;
+      color: #fff;
+      font-family: 'Great Vibes', cursive, Arial, sans-serif;
+      max-width: 90vw;
+      position: relative;
+      animation: flotar 3s ease-in-out infinite;
+    }
+    @keyframes flotar {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* Corazones flotantes en el modal */
+    .corazon {
+      position: absolute;
+      font-size: 2rem;
+      animation: flotar-corazon 4s ease-in-out infinite;
+      opacity: 0.7;
+    }
+    @keyframes flotar-corazon {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+    .corazon:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+    .corazon:nth-child(2) { top: 15%; right: 15%; animation-delay: 1s; }
+    .corazon:nth-child(3) { bottom: 15%; left: 15%; animation-delay: 2s; }
+    .corazon:nth-child(4) { bottom: 10%; right: 10%; animation-delay: 1.5s; }
+    
+    #modal-bienvenida .titulo {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px rgba(255, 105, 180, 1);
+      background: linear-gradient(45deg, #ff69b4, #fff, #da70d6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    #modal-bienvenida .subtitulo {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: #ffb6c1;
+      text-shadow: 0 0 10px rgba(255, 182, 193, 0.8);
+    }
+    
+    #modal-bienvenida img {
+      max-width: 70%;
+      border-radius: 20px;
+      display: block;
+      margin: 1.5rem auto;
+      box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    #modal-bienvenida button {
+      margin-top: 2rem;
+      font-size: 1.8rem;
+      padding: 1rem 3rem;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #ff1493, #ff69b4);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(255, 20, 147, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.3);
+      transition: all 0.3s;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    #modal-bienvenida button::before {
+      content: '💕';
+      position: absolute;
+      left: 20px;
+      font-size: 1.5rem;
+    }
+    #modal-bienvenida button::after {
+      content: '💕';
+      position: absolute;
+      right: 20px;
+      font-size: 1.5rem;
+    }
+    #modal-bienvenida button:hover {
+      background: linear-gradient(135deg, #ff69b4, #ff1493);
+      transform: scale(1.05);
+      box-shadow: 0 12px 30px rgba(255, 20, 147, 0.8);
+    }
+    #modal-bienvenida button:active {
+      transform: scale(0.98);
+    }
+
+    /* Modal de carta de amor */
+    #modal-carta {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      animation: fadeIn 0.4s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    #modal-carta.visible {
+      display: flex;
+    }
+    #modal-carta .carta {
+      background: url('https://i.pinimg.com/originals/e3/7e/ff/e37eff84f082bd8ae1b3f0331c04b5fd.gif') center/cover;
+      border-radius: 25px;
+      padding: 3rem;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 0 80px rgba(255, 105, 180, 0.9), 0 0 120px rgba(138, 43, 226, 0.6);
+      border: 4px solid rgba(255, 255, 255, 0.4);
+    }
+    #modal-carta .carta::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.7), rgba(75, 0, 130, 0.85));
+      border-radius: 25px;
+      z-index: -1;
+    }
+    #modal-carta .carta-texto {
+      font-size: 2rem;
+      font-family: 'Great Vibes', cursive, Arial, sans-serif;
+      text-align: center;
+      color: #fff;
+      text-shadow: 0 0 15px rgba(255, 105, 180, 1), 0 0 25px rgba(255, 182, 193, 0.8);
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+    }
+    #modal-carta .cerrar-carta {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+      padding: 0.8rem 2rem;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #ff1493, #ff69b4);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(255, 20, 147, 0.6);
+      transition: all 0.3s;
+      font-weight: bold;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #modal-carta .cerrar-carta:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(255, 20, 147, 0.8);
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000000;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100dvh;
+    }
+  </style>
+</head>
+<body>
+  <!-- Modal de bienvenida mejorado -->
+  <div id="modal-bienvenida">
+    <div class="contenido">
+      <div class="corazon">💖</div>
+      <div class="corazon">💗</div>
+      <div class="corazon">💕</div>
+      <div class="corazon">💓</div>
+      
+      <div class="titulo">Para ti Pochi</div>
+      <div class="subtitulo">Un universo creado por nosotros ✨</div>
+      <img src="https://media1.tenor.com/m/bcwXG8EHf9sAAAAC/pochita-dog.gif" alt="Bienvenida">
+      <button id="btn-ingresar">Entrar</button>
+    </div>
+  </div>
+
+  <!-- Modal de carta de amor -->
+  <div id="modal-carta">
+    <div class="carta">
+      <div class="carta-texto" id="texto-carta"></div>
+      <button class="cerrar-carta" id="btn-cerrar-carta">Cerrar 💕</button>
+    </div>
+  </div>
+
+  <canvas id="galaxy-canvas"></canvas>
+  <audio id="musica" autoplay>
+    <source src="https://github.com/terribleshub/Terribles-Hub/raw/main/SpotiDownloader.com%20-%20Eres%20-%20Caf%C3%A9%20Tacvba.mp3" type="audio/mpeg">
+  </audio>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    // Modal de bienvenida
+    window.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('modal-bienvenida');
+      const btn = document.getElementById('btn-ingresar');
+      const audio = document.getElementById('musica');
+      
+      // Cuando termine la canción de Café Tacvba, cambiar a la de Joji en loop
+      audio.addEventListener('ended', () => {
+        audio.src = 'https://github.com/terribleshub/Terribles-Hub/raw/main/SpotiDownloader.com%20-%20Like%20You%20Do%20-%20Joji.mp3';
+        audio.loop = true;
+        audio.load();
+        audio.play();
+      });
+      
+      btn.addEventListener('click', () => {
+        modal.classList.add('oculto');
+        setTimeout(() => { modal.style.display = 'none'; }, 700);
+        audio.play();
+        
+        // Iniciar animación Big Bang después de que se oculte el modal
+        setTimeout(() => {
+          startBigBang();
+        }, 700);
+      });
+
+      // Modal de carta
+      const modalCarta = document.getElementById('modal-carta');
+      const btnCerrarCarta = document.getElementById('btn-cerrar-carta');
+      btnCerrarCarta.addEventListener('click', () => {
+        modalCarta.classList.remove('visible');
+      });
+    });
+
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+
+    // === ESCENA Y RENDER ===
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.0003); // Niebla sutil para profundidad
+    
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    const renderer = new THREE.WebGLRenderer({
+      canvas: document.getElementById('galaxy-canvas'),
+      antialias: true,
+      alpha: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.8;
+
+    // === POST-PROCESSING: BLOOM EFFECT ===
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.4,  // strength (reducido)
+      0.3,  // radius (reducido)
+      0.88  // threshold (aumentado para menos blur)
+    );
+    composer.addPass(bloomPass);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 150;
+    controls.maxDistance = 2000;
+    controls.maxPolarAngle = Math.PI;
+    controls.autoRotate = false;
+
+    // Raycaster para detectar clicks
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // === VARIABLES PARA ANIMACIÓN BIG BANG ===
+    let bigBangActive = false;
+    let bigBangProgress = 0;
+    const bigBangDuration = 10.0; // 10 segundos para más realismo
+    let universeScale = 0;
+    let redParticle, blueParticle, explosion;
+
+    // === AGUJERO NEGRO MEJORADO ===
+    const blackHole = new THREE.Mesh(
+      new THREE.SphereGeometry(30, 64, 64),
+      new THREE.MeshStandardMaterial({ 
+        color: 0x000000, 
+        metalness: 1, 
+        roughness: 0.2,
+        emissive: 0x000000
+      })
+    );
+    scene.add(blackHole);
+
+    // Horizonte de eventos con shader mejorado
+    const evenHorizonGeometry = new THREE.SphereGeometry(35, 64, 64);
+    const evenHorizonMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        time: { value: 0 }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vPosition = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+          vec3 glow = vec3(0.5, 0.1, 0.7) * intensity;
+          float pulse = sin(time * 1.5) * 0.2 + 0.8;
+          gl_FragColor = vec4(glow * pulse, intensity * 0.7);
+        }
+      `
+    });
+    const evenHorizon = new THREE.Mesh(evenHorizonGeometry, evenHorizonMaterial);
+    scene.add(evenHorizon);
+
+    // Anillos gravitacionales más sutiles
+    const gravitationalRings = [];
+    for (let i = 0; i < 2; i++) {
+      const ringSize = 38 + i * 8;
+      const ringGeometry = new THREE.TorusGeometry(ringSize, 0.4, 16, 100);
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: i === 0 ? 0x9370db : 0xba55d3,
+        transparent: true,
+        opacity: 0.3 - i * 0.1,
+        blending: THREE.AdditiveBlending
+      });
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      ring.rotation.x = Math.PI / 2;
+      gravitationalRings.push(ring);
+      scene.add(ring);
+    }
+
+
+
+    // === PARTÍCULAS DISCO DE ACRECIÓN (Optimizado) ===
+    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 2000;
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleVelocities = [];
+    const particleColors = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 40 + Math.random() * 80;
+      particlePositions[i * 3] = Math.cos(angle) * radius;
+      particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 15;
+      particlePositions[i * 3 + 2] = Math.sin(angle) * radius;
+      
+      const colorChoice = Math.random();
+      if (colorChoice < 0.4) {
+        particleColors[i * 3] = 0.8;
+        particleColors[i * 3 + 1] = 0.4;
+        particleColors[i * 3 + 2] = 0.9;
+      } else if (colorChoice < 0.7) {
+        particleColors[i * 3] = 0.9;
+        particleColors[i * 3 + 1] = 0.5;
+        particleColors[i * 3 + 2] = 1.0;
+      } else {
+        particleColors[i * 3] = 1.0;
+        particleColors[i * 3 + 1] = 0.95;
+        particleColors[i * 3 + 2] = 1.0;
+      }
+      
+      particleVelocities.push({
+        angle: angle,
+        radius: radius,
+        speed: 0.15 + Math.random() * 0.25
+      });
+    }
+    
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    const particleMaterial = new THREE.PointsMaterial({
+      size: 1.5,
+      transparent: true,
+      opacity: 0.8,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending
+    });
+    const blackHoleParticles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(blackHoleParticles);
+
+    // === DISCO DE ACRECIÓN ===
+    const diskGeometry = new THREE.RingGeometry(42, 110, 128);
+    const diskCanvas = document.createElement("canvas");
+    diskCanvas.width = 512;
+    diskCanvas.height = 512;
+    const ctx = diskCanvas.getContext("2d");
+
+    const gradient = ctx.createRadialGradient(256, 256, 50, 256, 256, 250);
+    gradient.addColorStop(0, "rgba(255,255,255,0.7)");
+    gradient.addColorStop(0.3, "rgba(186,85,211,0.8)");
+    gradient.addColorStop(0.6, "rgba(138,43,226,0.6)");
+    gradient.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, diskCanvas.width, diskCanvas.height);
+
+    const diskTexture = new THREE.CanvasTexture(diskCanvas);
+    const accretionDisk = new THREE.Mesh(
+      diskGeometry,
+      new THREE.MeshBasicMaterial({ 
+        map: diskTexture, 
+        side: THREE.DoubleSide, 
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending
+      })
+    );
+    accretionDisk.rotation.x = Math.PI / 2;
+    scene.add(accretionDisk);
+
+    // === FRASES ROMÁNTICAS (Más espaciadas y legibles) ===
+    const galaxyGroup = new THREE.Group();
+    scene.add(galaxyGroup);
+
+    const phrases = [
+      "Mi enana", "Mi princesa", "Bella", "Cielito", "Dulzura",
+      "Mi sol", "Mi flor", "Mi niña pequeña", "Reina", "Pequeña",
+      "Mi risa", "Mi mitad", "Mi luna", "Bombón", "Estrella",
+      "Tesoro", "Mi joya", "Mi compañera", "Mi todo", "Dulce",
+      "Pochita", "Mi alma", "Mi Pochi", "Mi cielo", "Mi chiquis",
+      "Mi estrella", "Mi lokita", "Te amo mucho", "Te quiero mucho",
+      "Te amuuu", "Ailoviu", "Muack", "Mibonbon"
+    ];
+
+    function createTextTexture(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Limpiar el canvas completamente (fondo transparente)
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const colors = [
+        ["#ba55d3", "#ffffff", "#da70d6"],
+        ["#ff69b4", "#ffffff", "#ff8dc7"],
+        ["#ffffff", "#e6b8ff", "#ffffff"],
+        ["#9370db", "#ffffff", "#ba55d3"],
+      ];
+      const colorSet = colors[Math.floor(Math.random() * colors.length)];
+      
+      ctx.shadowColor = "rgba(186, 85, 211, 0.8)";
+      ctx.shadowBlur = 40;
+
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, colorSet[0]);
+      gradient.addColorStop(0.5, colorSet[1]);
+      gradient.addColorStop(1, colorSet[2]);
+
+      ctx.font = "bold 110px Arial";
+      ctx.fillStyle = gradient;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    // Menos frases, mejor distribuidas
+    const phraseCount = 45;
+    const arms = 5;
+    const radius = 600;
+
+    for (let i = 0; i < phraseCount; i++) {
+      const phraseIndex = i % phrases.length;
+      const textTexture = createTextTexture(phrases[phraseIndex]);
+      const material = new THREE.SpriteMaterial({ 
+        map: textTexture, 
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+        depthTest: true
+      });
+      const sprite = new THREE.Sprite(material);
+
+      const angle = (i % (phraseCount / arms)) * (Math.PI * 2 / (phraseCount / arms));
+      const armAngle = Math.floor(i / (phraseCount / arms)) * (Math.PI * 2 / arms);
+      const distance = Math.pow(i / phraseCount, 0.85) * radius;
+
+      sprite.position.set(
+        Math.cos(angle + armAngle) * distance,
+        (Math.random() - 0.5) * 120,
+        Math.sin(angle + armAngle) * distance
+      );
+      sprite.scale.set(70, 14, 1);
+      galaxyGroup.add(sprite);
+    }
+
+    // === CAMPO DE ESTRELLAS (Optimizado y más natural) ===
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 6000;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    const starSizes = new Float32Array(starCount);
+    
+    for (let i = 0; i < starCount; i++) {
+      const radius = 1500 + Math.random() * 5000;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      
+      starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      starPositions[i * 3 + 2] = radius * Math.cos(phi);
+      
+      const rand = Math.random();
+      if (rand < 0.3) {
+        starColors[i * 3] = 0.6 + Math.random() * 0.4;
+        starColors[i * 3 + 1] = 0.2 + Math.random() * 0.3;
+        starColors[i * 3 + 2] = 0.9 + Math.random() * 0.1;
+      } else if (rand < 0.6) {
+        starColors[i * 3] = 0.95 + Math.random() * 0.05;
+        starColors[i * 3 + 1] = 0.95 + Math.random() * 0.05;
+        starColors[i * 3 + 2] = 0.95 + Math.random() * 0.05;
+      } else {
+        starColors[i * 3] = 0.9 + Math.random() * 0.1;
+        starColors[i * 3 + 1] = 0.6 + Math.random() * 0.3;
+        starColors[i * 3 + 2] = 0.9 + Math.random() * 0.1;
+      }
+      
+      starSizes[i] = Math.random() * 1.5 + 0.5;
+    }
+    
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+    
+    const starMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 }
+      },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          float dist = length(gl_PointCoord - vec2(0.5));
+          if (dist > 0.5) discard;
+          float alpha = 1.0 - (dist * 2.0);
+          gl_FragColor = vec4(vColor, alpha * 0.9);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+
+    // === ESTRELLAS ZONA MEDIA (Más sutiles) ===
+    const midStarGeometry = new THREE.BufferGeometry();
+    const midStarCount = 2500;
+    const midStarPositions = new Float32Array(midStarCount * 3);
+    const midStarColors = new Float32Array(midStarCount * 3);
+    
+    for (let i = 0; i < midStarCount; i++) {
+      const radius = 200 + Math.random() * 500;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      
+      midStarPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      midStarPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      midStarPositions[i * 3 + 2] = radius * Math.cos(phi);
+      
+      const rand = Math.random();
+      if (rand < 0.4) {
+        midStarColors[i * 3] = 0.7 + Math.random() * 0.3;
+        midStarColors[i * 3 + 1] = 0.3 + Math.random() * 0.3;
+        midStarColors[i * 3 + 2] = 0.95 + Math.random() * 0.05;
+      } else {
+        midStarColors[i * 3] = 0.98;
+        midStarColors[i * 3 + 1] = 0.98;
+        midStarColors[i * 3 + 2] = 1.0;
+      }
+    }
+    
+    midStarGeometry.setAttribute('position', new THREE.BufferAttribute(midStarPositions, 3));
+    midStarGeometry.setAttribute('color', new THREE.BufferAttribute(midStarColors, 3));
+    const midStarMaterial = new THREE.PointsMaterial({ 
+      size: 1.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending
+    });
+    const midStars = new THREE.Points(midStarGeometry, midStarMaterial);
+    scene.add(midStars);
+
+
+
+    // === LUCES MEJORADAS ===
+    scene.add(new THREE.AmbientLight(0x9988cc, 0.4));
+    
+    const pointLight1 = new THREE.PointLight(0xba55d3, 1.5, 400);
+    pointLight1.position.set(0, 0, 0);
+    scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0xff69b4, 0.8, 800);
+    pointLight2.position.set(300, 200, -300);
+    scene.add(pointLight2);
+
+    // === GIFS FLOTANDO (Mejor posicionados) ===
+    const floatingSpritesGroup = new THREE.Group();
+    scene.add(floatingSpritesGroup);
+    
+    const gifUrls = [
+      'https://media.tenor.com/Pr1SLLaw6ssAAAAj/p1.gif',
+      'https://media.tenor.com/kIKCUtlep0cAAAAj/hulkenberg.gif',
+      'https://media.tenor.com/prOl9wYGThUAAAAj/love-you-cat.gif',
+      'https://media.tenor.com/MH_P_niyN6oAAAAj/%EB%AA%A8%EC%B0%8C%EB%83%A5.gif',
+      'https://media.tenor.com/LiGTbtBFUdEAAAAj/peach-and-goma-hugging.gif',
+      'https://media.tenor.com/mxg1RwQmzQQAAAAj/peach-goma-love-pat-head-cheek.gif',
+      'https://media.tenor.com/bRPn3f5rg0gAAAAj/mochi-cat-couple.gif',
+      'https://media.tenor.com/X0AU4rFwjYsAAAAi/mochi-cat-mad-cat.gif',
+      'https://media.tenor.com/MapB0PgXvaMAAAAi/mochi-cat-smooch.gif',
+      'https://media.tenor.com/CRupKoCv1tEAAAAi/%EB%AA%A8%EC%B0%8C%EB%83%A5.gif',
+      'https://media.tenor.com/ujq2yTt6EuoAAAAi/crystal-amaru.gif',
+      'https://media.tenor.com/ivKWdfdbV3EAAAAi/goma-goma-cat.gif',
+      'https://media.tenor.com/Kyt9sqMPAyQAAAAi/%EB%AA%A8%EC%B0%8C%EB%83%A5.gif',
+    ];
+
+    const loveMensajes = [
+      "No sé en qué momento te volviste indispensable, pero gracias por quedarte.",
+      "Hay días en los que solo necesito escucharte para sentir que todo va a estar bien.",
+      "Contigo puedo llorar, reír y hacer el ridículo sin miedo.",
+      "Gracias por quererme incluso cuando ni yo misma me soporto.",
+      "Eres esa persona que llegó sin hacer ruido y se quedó para siempre.",
+      "Cuando el mundo pesa, tú lo haces más liviano.",
+      "No somos perfectas, pero nuestra amistad sí se siente así.",
+      "Qué suerte la mía haberte encontrado en esta vida.",
+      "Hemos crecido tanto… y qué bonito crecer contigo.",
+      "Eres mi lugar seguro en un mundo que a veces asusta.",
+      "Gracias por escucharme repetir la misma historia mil veces.",
+      "Contigo aprendí que la amistad verdadera sí existe.",
+      "Si me preguntan qué es hogar, pienso en nuestras conversaciones eternas.",
+      "Eres mi persona favorita para contarle hasta lo más insignificante.",
+      "En mis recuerdos más felices, siempre estás tú.",
+      "Gracias por abrazar mis versiones rotas sin intentar cambiarlas.",
+      "Eres mi paz cuando mi mente no se calla.",
+      "No necesito explicarte todo, tú simplemente entiendes.",
+      "Haces que la vida cotidiana se sienta especial.",
+      "Prometo estar para ti así como tú has estado para mí.",
+      "Nuestra amistad es de esas que no se rompen, solo se fortalecen.",
+      "Eres mi apoyo silencioso y mi alegría ruidosa al mismo tiempo.",
+      "Gracias por elegir quedarte incluso cuando era más fácil irse.",
+      "Si algún día dudo de todo, nunca dudaré de ti.",
+      "Eres la prueba de que el alma sí reconoce a su gente.",
+      "No importa cuánto pase el tiempo, siempre vas a ser mi Pochi.",
+      "Es tan fácil ser yo cuando estoy contigo, no tengo que ponerme ninguna máscara.",
+      "La vida es mejor contigo a mi lado, no hay forma de explicarlo, simplemente lo siento.",
+      "A veces pienso en cómo mi vida sería sin ti y me cuesta imaginarlo… eres parte de todo.",
+      "Tus abrazos siempre han sido el mejor remedio para mis días difíciles.",
+      "Si pudiera regalarte un pedazo de mi alma, te lo daría con todo mi ser.",
+      "Los buenos momentos contigo no tienen precio, y los malos son más llevaderos.",
+      "Te pienso a menudo, y siempre con una sonrisa.",
+      "Nuestra amistad es como un buen libro que nunca quiero terminar.",
+      "A veces, la vida te pone personas en el camino que te hacen sentir completa, y tú eres esa para mí.",
+      "Gracias por no dejarme caer ni cuando las cosas se ponían feas.",
+      "Me encanta cómo hasta los silencios contigo se sienten tan cómodos, tan míos.",
+      "Los días más largos son cortos cuando los paso contigo, no importa lo que estemos haciendo.",
+      "El destino debe haberte mandado a mi vida para enseñarme lo que realmente importa.",
+      "Contigo aprendí que las verdaderas amigas no se cuentan con los dedos de las manos, se sienten con el corazón.",
+      "Pochi, sin ti la vida perdería su brillo, eres mi luz constante.",
+      "En todo lo que he pasado, tú has sido la constante que nunca se fue.",
+      "Cuando te abrazo, siento que el mundo se detiene, y todo está en su lugar.",
+      "Nuestro lazo es más fuerte que cualquier distancia o tiempo. Siempre estaré aquí para ti.",
+      "Tu amistad es mi refugio, y no cambiaría ni un segundo de todo lo que hemos vivido juntas.",
+      "A veces, las palabras no alcanzan para describir lo agradecida que estoy de tenerte en mi vida.",
+      "Pochi, en los días grises, tú eres el color que hace todo más bonito.",
+      "No te imaginas lo mucho que significas para mí, pero lo intentaré: todo.",
+      "Cada risa que compartimos es un recuerdo que llevo en mi corazón.",
+      "Gracias por no juzgarme nunca, por siempre verme con los ojos de alguien que realmente me conoce.",
+      "Eres ese pedacito de paz que siempre busco, incluso en los momentos de caos.",
+      "A tu lado, todo es más fácil. Gracias por ser mi compañera de viaje en esta locura llamada vida.",
+      "Eres el tipo de amiga que solo se encuentra una vez, y yo tengo la suerte de haberte encontrado.",
+      "Nuestra amistad es mi mayor bendición, no lo digo por decirlo, lo siento con cada fibra de mi ser.",
+      "Cuando me siento perdida, solo pensar en ti me da el norte.",
+      "Y sé que aunque pase el tiempo y cambiemos, siempre seremos las mismas en el fondo.",
+      "Eres mucho más que una amiga, eres un pedazo de mi alma en otro cuerpo.",
+      "Si alguna vez te sientes sola, recuerda que siempre estaré a un mensaje de distancia.",
+      "Lo que más agradezco de nuestra amistad es que no importa lo que pase, nunca hay espacio para el rencor."
+    ];
+
+    const loader = new THREE.TextureLoader();
+    const gifCount = 22; // Cantidad ideal de GIFs
+
+    gifUrls.forEach((gifUrl, gifIndex) => {
+      loader.load(gifUrl, (texture) => {
+        const gifsPerUrl = Math.ceil(gifCount / gifUrls.length);
+        for (let i = 0; i < gifsPerUrl && (gifIndex * gifsPerUrl + i) < gifCount; i++) {
+          const material = new THREE.SpriteMaterial({ 
+            map: texture, 
+            transparent: true, 
+            depthWrite: false,
+            sizeAttenuation: true
+          });
+          const sprite = new THREE.Sprite(material);
+          
+          const radius = 250 + Math.random() * 350;
+          const angle = Math.random() * Math.PI * 2;
+          const height = (Math.random() - 0.5) * 180;
+          
+          sprite.position.set(
+            Math.cos(angle) * radius,
+            height,
+            Math.sin(angle) * radius
+          );
+          
+          sprite.userData = {
+            clickable: true,
+            baseY: height,
+            floatSpeed: 0.4 + Math.random() * 0.4,
+            floatOffset: Math.random() * Math.PI * 2
+          };
+          
+          const s = 30 + Math.random() * 15;
+          sprite.scale.set(s, s, 1);
+          
+          floatingSpritesGroup.add(sprite);
+        }
+      });
+    });
+
+    // === CLICK EN GIFS ===
+    function onMouseClick(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(floatingSpritesGroup.children);
+
+      if (intersects.length > 0) {
+        const clickedSprite = intersects[0].object;
+        if (clickedSprite.userData.clickable) {
+          const mensajeAleatorio = loveMensajes[Math.floor(Math.random() * loveMensajes.length)];
+          mostrarCarta(mensajeAleatorio);
+        }
+      }
+    }
+
+    function mostrarCarta(mensaje) {
+      const modalCarta = document.getElementById('modal-carta');
+      const textoCarta = document.getElementById('texto-carta');
+      textoCarta.textContent = mensaje;
+      modalCarta.classList.add('visible');
+    }
+
+    window.addEventListener('click', onMouseClick);
+
+    // === INICIALIZAR PARTÍCULAS DEL BIG BANG ===
+    // Punto rojo
+    redParticle = new THREE.Mesh(
+      new THREE.SphereGeometry(8, 32, 32),
+      new THREE.MeshBasicMaterial({ 
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0  // Inicialmente invisible
+      })
+    );
+    redParticle.position.set(-100, 0, 0);
+    scene.add(redParticle);
+
+    // Punto azul
+    blueParticle = new THREE.Mesh(
+      new THREE.SphereGeometry(8, 32, 32),
+      new THREE.MeshBasicMaterial({ 
+        color: 0x0066ff,
+        transparent: true,
+        opacity: 0  // Inicialmente invisible
+      })
+    );
+    blueParticle.position.set(100, 0, 0);
+    scene.add(blueParticle);
+
+    // Explosión púrpura (inicialmente invisible)
+    const explosionGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const explosionMaterial = new THREE.MeshBasicMaterial({
+      color: 0x8a2be2,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+    explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
+    scene.add(explosion);
+
+    // Ocultar todos los elementos del universo inicialmente
+    galaxyGroup.visible = false;
+    accretionDisk.visible = false;
+    blackHole.visible = false;
+    evenHorizon.visible = false;
+    blackHoleParticles.visible = false;
+    stars.visible = false;
+    midStars.visible = false;
+    floatingSpritesGroup.visible = false;
+    gravitationalRings.forEach(ring => ring.visible = false);
+
+    // Función para iniciar el Big Bang
+    function startBigBang() {
+      bigBangActive = true;
+      bigBangProgress = 0;
+      universeScale = 0;
+      camera.position.set(0, 0, 300);
+      controls.enabled = false;
+      
+      // Reiniciar partículas
+      redParticle.position.set(-100, 0, 0);
+      blueParticle.position.set(100, 0, 0);
+      redParticle.visible = true;
+      blueParticle.visible = true;
+      redParticle.material.opacity = 0;
+      blueParticle.material.opacity = 0;
+      redParticle.scale.set(1, 1, 1);
+      blueParticle.scale.set(1, 1, 1);
+      
+      explosion.visible = true;
+      explosion.material.opacity = 0;
+      explosion.scale.set(1, 1, 1);
+      
+      console.log("Big Bang iniciado!"); // Debug
+    }
+
+    // === ANIMACIÓN PRINCIPAL ===
+    const clock = new THREE.Clock();
+    
+    function animate() {
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+      
+      // === ANIMACIÓN DEL BIG BANG ===
+      if (bigBangActive) {
+        bigBangProgress += delta;
+        const progress = Math.min(bigBangProgress / bigBangDuration, 1);
+        
+        console.log(`Progress: ${(progress * 100).toFixed(1)}%`);
+        
+        if (progress < 0.15) {
+          // FASE 1: Aparición (0-15%)
+          const t = progress / 0.15;
+          redParticle.material.opacity = t;
+          blueParticle.material.opacity = t;
+          const pulse = 1 + Math.sin(t * Math.PI * 6) * 0.15;
+          redParticle.scale.setScalar(pulse);
+          blueParticle.scale.setScalar(pulse);
+          
+        } else if (progress < 0.35) {
+          // FASE 2: Acercamiento (15-35%)
+          const t = (progress - 0.15) / 0.2;
+          redParticle.material.opacity = 1;
+          blueParticle.material.opacity = 1;
+          redParticle.position.x = -100 + (100 * t);
+          blueParticle.position.x = 100 - (100 * t);
+          const pulse = 1 + Math.sin(t * Math.PI * 15) * 0.4;
+          redParticle.scale.setScalar(pulse);
+          blueParticle.scale.setScalar(pulse);
+          
+        } else if (progress < 0.4) {
+          // FASE 3: Colisión (35-40%)
+          const t = (progress - 0.35) / 0.05;
+          redParticle.position.set(0, 0, 0);
+          blueParticle.position.set(0, 0, 0);
+          redParticle.material.opacity = 1 - t;
+          blueParticle.material.opacity = 1 - t;
+          explosion.material.opacity = t;
+          explosion.scale.setScalar(1 + t * 10);
+          
+        } else if (progress < 0.5) {
+          // FASE 4: Explosión (40-50%)
+          const t = (progress - 0.4) / 0.1;
+          redParticle.visible = false;
+          blueParticle.visible = false;
+          explosion.material.opacity = 0.8;
+          explosion.scale.setScalar(10 + t * 30);
+          
+        } else if (progress < 0.6) {
+          // FASE 5: Agujero negro (50-60%)
+          const t = (progress - 0.5) / 0.1;
+          explosion.scale.setScalar(40 + t * 20);
+          explosion.material.opacity = 0.8 - t * 0.5;
+          blackHole.visible = true;
+          evenHorizon.visible = true;
+          const scale = t * 0.5;
+          blackHole.scale.setScalar(scale);
+          evenHorizon.scale.setScalar(scale);
+          
+        } else if (progress < 0.7) {
+          // FASE 6: Disco y anillos (60-70%)
+          const t = (progress - 0.6) / 0.1;
+          explosion.material.opacity = 0.3 - t * 0.3;
+          const scale = 0.5 + t * 0.3;
+          blackHole.scale.setScalar(scale);
+          evenHorizon.scale.setScalar(scale);
+          accretionDisk.visible = true;
+          accretionDisk.scale.setScalar(scale);
+          blackHoleParticles.visible = true;
+          gravitationalRings.forEach(ring => {
+            ring.visible = true;
+            ring.scale.setScalar(scale);
+          });
+          camera.position.z = 300 + t * 150;
+          
+        } else if (progress < 0.8) {
+          // FASE 7: Estrellas (70-80%)
+          const t = (progress - 0.7) / 0.1;
+          explosion.visible = false;
+          const scale = 0.8 + t * 0.15;
+          blackHole.scale.setScalar(scale);
+          evenHorizon.scale.setScalar(scale);
+          accretionDisk.scale.setScalar(scale);
+          gravitationalRings.forEach(ring => ring.scale.setScalar(scale));
+          stars.visible = true;
+          midStars.visible = true;
+          camera.position.z = 450 + t * 100;
+          
+        } else if (progress < 0.9) {
+          // FASE 8: Galaxia (80-90%)
+          const t = (progress - 0.8) / 0.1;
+          const scale = 0.95 + t * 0.05;
+          blackHole.scale.setScalar(1);
+          evenHorizon.scale.setScalar(1);
+          accretionDisk.scale.setScalar(1);
+          gravitationalRings.forEach(ring => ring.scale.setScalar(1));
+          galaxyGroup.visible = true;
+          galaxyGroup.scale.setScalar(scale);
+          camera.position.z = 550 + t * 100;
+          camera.position.y = t * 150;
+          
+        } else if (progress < 1) {
+          // FASE 9: GIFs y final (90-100%)
+          const t = (progress - 0.9) / 0.1;
+          galaxyGroup.scale.setScalar(1);
+          floatingSpritesGroup.visible = true;
+          floatingSpritesGroup.scale.setScalar(t);
+          camera.position.z = 650 + t * 50;
+          camera.position.y = 150 + t * 30;
+          
+        } else {
+          // COMPLETADO
+          bigBangActive = false;
+          controls.enabled = true;
+          explosion.visible = false;
+          redParticle.visible = false;
+          blueParticle.visible = false;
+          floatingSpritesGroup.scale.setScalar(1);
+          camera.position.set(0, 180, 700);
+          console.log("Big Bang COMPLETADO!");
+        }
+      }
+      
+      // Animaciones normales (solo si Big Bang no está activo)
+      if (!bigBangActive) {
+        // Rotación galaxia más lenta
+        galaxyGroup.rotation.y = elapsed * 0.01;
+        accretionDisk.rotation.z += 0.0015;
+
+      // Pulso frases más sutil
+      galaxyGroup.children.forEach((sprite, i) => {
+        const scale = 70 + Math.sin(elapsed * 1.5 + i) * 5;
+        sprite.scale.set(scale, 14, 1);
+        sprite.material.opacity = 0.8 + Math.sin(elapsed * 2 + i) * 0.15;
+      });
+
+      // Horizonte de eventos
+      if (evenHorizonMaterial.uniforms) {
+        evenHorizonMaterial.uniforms.time.value = elapsed;
+      }
+
+      // Anillos gravitacionales
+      gravitationalRings.forEach((ring, index) => {
+        ring.rotation.z += 0.008 + index * 0.004;
+      });
+
+      // Partículas disco
+      const positions = blackHoleParticles.geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        const vel = particleVelocities[i];
+        vel.angle += vel.speed * delta;
+        vel.radius -= vel.speed * 1.5;
+        
+        if (vel.radius < 35) {
+          vel.radius = 40 + Math.random() * 80;
+        }
+        
+        positions[i * 3] = Math.cos(vel.angle) * vel.radius;
+        positions[i * 3 + 2] = Math.sin(vel.angle) * vel.radius;
+      }
+      blackHoleParticles.geometry.attributes.position.needsUpdate = true;
+
+      // GIFs flotando
+      floatingSpritesGroup.children.forEach((sprite) => {
+        const floatAmount = Math.sin(elapsed * sprite.userData.floatSpeed + sprite.userData.floatOffset) * 6;
+        sprite.position.y = sprite.userData.baseY + floatAmount;
+        sprite.quaternion.copy(camera.quaternion);
+      });
+
+      // Parpadeo estrellas lejanas (menos frecuente)
+      if (Math.random() > 0.98) {
+        const randomIndex = Math.floor(Math.random() * starCount);
+        starColors[randomIndex * 3] = Math.random() * 0.3 + 0.7;
+        starColors[randomIndex * 3 + 1] = Math.random() * 0.3 + 0.7;
+        starColors[randomIndex * 3 + 2] = Math.random() * 0.3 + 0.7;
+        starGeometry.attributes.color.needsUpdate = true;
+      }
+      
+      } // Fin del if (!bigBangActive)
+
+      // Render siempre
+      composer.render();
+      
+      // Actualizar controles solo si están habilitados
+      if (controls.enabled) {
+        controls.update();
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    camera.position.set(0, 0, 300);
+    animate();
+
+    // Responsive
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
