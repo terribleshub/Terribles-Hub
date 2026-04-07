@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MyLove — Para ti, Nataly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Great+Vibes&display=swap" rel="stylesheet">
+<!-- GSAP para animaciones premium -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+:root {
+  --bg: #07000f;
+  --bg2: #0e0018;
+  --plum: #5b1a8a;
+  --violet: #9333ea;
+  --rose: #ec4899;
+  --mist: rgba(242,230,255,0.92);
+  --mist2: rgba(242,230,255,0.58);
+  --mist3: rgba(242,230,255,0.24);
+  --border: rgba(147,51,234,0.2);
+  --card: rgba(10,3,20,0.84);
+  --radius: 18px;
+  --glow-violet: 0 0 30px rgba(147,51,234,0.35);
+  --glow-rose: 0 0 30px rgba(236,72,153,0.35);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;
+  -webkit-touch-callout:none;
+  font-family:'Cormorant Garamond',serif;
+  background:var(--bg);color:var(--mist);
+  min-height:100vh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* BG CANVAS */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+/* GRAIN */
+#grain{
+  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.032;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px;
+}
+
+/* HEARTS */
+#hearts{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.heart{
+  position:absolute;bottom:-60px;
+  animation:floatup linear forwards;opacity:0;
+  will-change:transform,opacity;
+}
+@keyframes floatup{
+  0%{transform:translateY(0) rotate(-8deg) scale(0.8);opacity:0;}
+  8%{opacity:0.6;}
+  88%{opacity:0.15;}
+  100%{transform:translateY(-115vh) rotate(12deg) scale(1.05);opacity:0;}
+}
+
+/* CURSOR GLOW */
+#cursor-glow{
+  position:fixed;width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle,rgba(147,51,234,0.07) 0%,transparent 70%);
+  pointer-events:none;z-index:1;
+  transform:translate(-50%,-50%);
+  transition:opacity .3s;
+}
+
+/* WRAP */
+#wrap{
+  position:relative;z-index:2;max-width:660px;margin:0 auto;
+  padding:52px 20px 90px;
+  opacity:0;
+}
+
+/* HEADER */
+.header{text-align:center;margin-bottom:48px;position:relative;}
+
+/* DATE BADGE */
+.date-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(147,51,234,0.08);border:1px solid rgba(147,51,234,0.18);
+  border-radius:50px;padding:5px 14px;margin-bottom:18px;
+  font-family:'DM Mono',monospace;font-size:.58rem;
+  color:rgba(196,84,247,0.7);letter-spacing:.15em;text-transform:uppercase;
+}
+.date-badge::before{content:'✦';font-size:.5rem;}
+
+/* CAT ROW */
+.cats-row{
+  display:flex;justify-content:center;align-items:flex-end;
+  gap:10px;margin-bottom:22px;flex-wrap:wrap;
+}
+.cat-gif{
+  width:70px;height:70px;border-radius:50%;object-fit:cover;
+  border:none;box-shadow:none;
+  animation:catfloat 3s ease-in-out infinite;
+  cursor:pointer;
+  transition:transform .15s;
+}
+.cat-gif:nth-child(2){animation-delay:.5s;width:84px;height:84px;}
+.cat-gif:nth-child(3){animation-delay:1s;}
+.cat-gif:active{transform:scale(0.9);}
+@keyframes catfloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+
+/* TITLE */
+h1{
+  font-family:'Great Vibes',cursive;
+  font-size:clamp(3.4rem,11vw,6.2rem);font-weight:400;line-height:1;
+  background:linear-gradient(135deg,#f9a8d4 0%,#c084fc 40%,#818cf8 80%,#f472b6 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:10px;letter-spacing:.02em;
+  animation:gradientshift 5s linear infinite, titleglow 4s ease-in-out infinite;
+  filter:drop-shadow(0 0 22px rgba(196,84,247,0.5));
+}
+@keyframes gradientshift{0%{background-position:0% center;}100%{background-position:200% center;}}
+@keyframes titleglow{
+  0%,100%{filter:drop-shadow(0 0 22px rgba(196,84,247,0.5));}
+  50%{filter:drop-shadow(0 0 42px rgba(236,72,153,0.7));}
+}
+
+.subtitle{
+  font-size:.76rem;letter-spacing:.3em;
+  color:var(--mist3);font-family:'DM Mono',monospace;font-weight:300;
+  text-transform:uppercase;
+}
+
+/* DIVIDER */
+.divider{
+  display:flex;align-items:center;gap:14px;margin:30px 0;
+  color:rgba(147,51,234,0.35);font-size:.58rem;font-family:'DM Mono',monospace;
+  letter-spacing:.2em;text-transform:uppercase;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(147,51,234,0.25),transparent);
+}
+
+/* DEDICATION CARD */
+.ded-card{
+  background:linear-gradient(135deg,rgba(10,3,20,0.9),rgba(20,5,35,0.85));
+  border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px 32px;margin-bottom:28px;
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  position:relative;overflow:hidden;
+}
+.ded-card::before{
+  content:'';position:absolute;top:0;left:-100%;right:-100%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(196,84,247,0.6),rgba(236,72,153,0.5),transparent);
+  animation:shimmer-line 2.8s linear infinite;
+}
+@keyframes shimmer-line{0%{transform:translateX(-50%);}100%{transform:translateX(50%);}}
+.ded-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(236,72,153,0.3),transparent);
+}
+/* Corner decorations */
+.ded-card .corner{
+  position:absolute;width:18px;height:18px;
+  border-color:rgba(196,84,247,0.35);border-style:solid;border-width:0;
+}
+.ded-card .corner.tl{top:8px;left:8px;border-top-width:1px;border-left-width:1px;}
+.ded-card .corner.tr{top:8px;right:8px;border-top-width:1px;border-right-width:1px;}
+.ded-card .corner.bl{bottom:8px;left:8px;border-bottom-width:1px;border-left-width:1px;}
+.ded-card .corner.br{bottom:8px;right:8px;border-bottom-width:1px;border-right-width:1px;}
+.ded-card p{
+  font-size:1.1rem;line-height:2;
+  font-style:italic;color:var(--mist2);font-weight:300;text-align:center;
+}
+
+/* GIF STRIP */
+.gif-strip{
+  display:flex;justify-content:center;gap:10px;margin:26px 0;flex-wrap:wrap;
+}
+.gif-strip img{
+  width:64px;height:64px;border-radius:14px;object-fit:cover;
+  border:none;
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s ease;
+  cursor:pointer;
+}
+.gif-strip img:hover{
+  transform:scale(1.2) rotate(-4deg);
+  box-shadow:0 8px 28px rgba(236,72,153,0.4);
+}
+
+/* SPOTIFY */
+.spotify-wrap{text-align:center;margin-bottom:44px;}
+.sp-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#1DB954,#17a349);
+  color:#fff;padding:13px 34px;border-radius:50px;
+  text-decoration:none;font-family:'DM Mono',monospace;
+  font-size:.72rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 8px 28px rgba(29,185,84,0.3);
+  position:relative;overflow:hidden;
+}
+.sp-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);
+  border-radius:50px;
+}
+.sp-btn:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 14px 38px rgba(29,185,84,0.45);}
+.sp-btn svg{width:17px;height:17px;flex-shrink:0;}
+
+/* SECTION TITLE */
+.section-title{
+  font-size:.74rem;font-weight:400;letter-spacing:.28em;text-transform:uppercase;
+  text-align:center;color:rgba(196,84,247,0.65);
+  margin-bottom:24px;font-family:'DM Mono',monospace;
+}
+
+/* SONG CARDS */
+.songs-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+.song-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:border-color .25s,box-shadow .25s,transform .2s;
+  opacity:0;transform:translateY(20px);
+  position:relative;
+}
+.song-card::before{
+  content:'';position:absolute;inset:0;border-radius:var(--radius);
+  background:radial-gradient(ellipse at top left,rgba(147,51,234,0.04),transparent 60%);
+  pointer-events:none;z-index:0;
+}
+.song-card.visible{animation:cardin .55s cubic-bezier(.16,1,.3,1) forwards;}
+@keyframes cardin{to{opacity:1;transform:none;}}
+.song-card:hover{
+  border-color:rgba(147,51,234,0.45);
+  box-shadow:0 8px 32px rgba(147,51,234,0.12),0 0 0 1px rgba(147,51,234,0.08);
+  transform:translateY(-1px);
+}
+
+/* CARD TOP */
+.card-top{
+  display:flex;align-items:center;gap:13px;padding:15px 16px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  position:relative;z-index:1;
+}
+.num-badge{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--plum),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:.65rem;color:#fff;
+  box-shadow:0 2px 10px rgba(147,51,234,0.3);
+}
+.card-art{
+  width:46px;height:46px;border-radius:11px;flex-shrink:0;
+  overflow:hidden;background:var(--bg2);position:relative;
+}
+.card-art img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s;}
+.card-art img.loaded{opacity:1;}
+.art-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.art-ph svg{width:16px;height:16px;}
+.art-error{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:1.3rem;}
+.card-info{flex:1;min-width:0;}
+.song-title{
+  font-size:.97rem;font-weight:400;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--mist);letter-spacing:.02em;
+}
+.song-artist{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mist3);margin-top:2px;letter-spacing:.05em;}
+
+/* PREVIEW BTN */
+.preview-btn{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  border:1px solid rgba(147,51,234,0.35);background:rgba(147,51,234,0.1);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;
+}
+.preview-btn:hover{
+  background:rgba(147,51,234,0.24);border-color:var(--violet);
+  box-shadow:0 0 18px rgba(147,51,234,0.3);
+  transform:scale(1.08);
+}
+.preview-btn svg{width:12px;height:12px;fill:var(--mist);transition:fill .2s;}
+.preview-btn.playing svg{fill:var(--rose);}
+.preview-btn.playing{
+  border-color:var(--rose);background:rgba(236,72,153,0.12);
+  box-shadow:0 0 18px rgba(236,72,153,0.25);
+  animation:btnpulse 1.5s ease-in-out infinite;
+}
+@keyframes btnpulse{0%,100%{box-shadow:0 0 18px rgba(236,72,153,0.25);}50%{box-shadow:0 0 28px rgba(236,72,153,0.5);}}
+
+/* PLAYER */
+.card-player{max-height:0;overflow:hidden;transition:max-height .38s cubic-bezier(.16,1,.3,1);}
+.card-player.open{max-height:96px;}
+.player-inner{padding:12px 16px 14px;border-top:1px solid rgba(147,51,234,0.1);position:relative;z-index:1;}
+.prog-wrap{cursor:pointer;margin-bottom:8px;padding:4px 0;}
+.prog-track{
+  height:3px;border-radius:99px;background:rgba(255,255,255,0.07);
+  overflow:hidden;transition:transform .15s;
+}
+.prog-wrap:hover .prog-track{transform:scaleY(1.9);}
+.prog-fill{
+  height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,var(--plum),var(--violet),var(--rose));
+  transition:width .1s linear;
+}
+.player-meta{display:flex;align-items:center;justify-content:space-between;}
+.time-display{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mist3);letter-spacing:.05em;}
+
+/* EQ BARS */
+.eq-bars{display:flex;align-items:flex-end;gap:2px;height:13px;}
+.eq-bar{
+  width:3px;border-radius:2px;
+  background:linear-gradient(to top,var(--plum),var(--violet));
+  animation:eq .7s ease-in-out infinite alternate;
+}
+.eq-bar:nth-child(1){height:4px;animation-delay:0s;}
+.eq-bar:nth-child(2){height:9px;animation-delay:.1s;}
+.eq-bar:nth-child(3){height:6px;animation-delay:.2s;}
+.eq-bar:nth-child(4){height:11px;animation-delay:.05s;}
+.eq-bar:nth-child(5){height:4px;animation-delay:.15s;}
+@keyframes eq{from{transform:scaleY(.2);opacity:.3;}to{transform:scaleY(1);opacity:1;}}
+.eq-bars.off .eq-bar{animation-play-state:paused;transform:scaleY(.2);opacity:.3;}
+
+/* SONG DED & LYRICS */
+.song-ded{
+  padding:9px 16px 8px;border-top:1px solid rgba(147,51,234,0.08);
+  font-size:.88rem;font-style:italic;color:var(--mist2);
+  line-height:1.7;font-weight:300;position:relative;z-index:1;
+}
+.song-lyrics{
+  padding:4px 16px 14px;
+  font-family:'Great Vibes',cursive;font-size:1.15rem;
+  color:rgba(196,84,247,0.65);line-height:1.55;position:relative;z-index:1;
+}
+
+/* SPIN */
+.spin{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  border:1.5px solid rgba(147,51,234,0.28);border-top-color:var(--violet);
+  animation:spin .7s linear infinite;vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* STATUS BADGE on card */
+.status-badge{
+  font-family:'DM Mono',monospace;font-size:.52rem;
+  letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:99px;margin-left:6px;
+  vertical-align:middle;
+}
+.status-badge.ok{background:rgba(29,185,84,0.12);color:rgba(29,185,84,0.7);border:1px solid rgba(29,185,84,0.2);}
+.status-badge.err{background:rgba(236,72,153,0.1);color:rgba(236,72,153,0.6);border:1px solid rgba(236,72,153,0.2);}
+
+/* CENTER CAT */
+.center-cat{text-align:center;margin:48px 0 32px;}
+.center-cat img{
+  width:128px;height:128px;border-radius:50%;
+  border:none;box-shadow:none;
+  animation:catfloat 3.5s ease-in-out infinite;
+  cursor:pointer;
+}
+
+/* LOVE COUNTER */
+.love-counter{
+  text-align:center;margin:0 0 40px;
+  font-family:'DM Mono',monospace;font-size:.6rem;
+  color:rgba(196,84,247,0.45);letter-spacing:.15em;text-transform:uppercase;
+}
+.love-counter span{
+  color:rgba(236,72,153,0.7);font-size:.9rem;
+  font-family:'Great Vibes',cursive;letter-spacing:0;
+}
+
+/* FOOTER */
+.footer{
+  text-align:center;margin-top:48px;
+  border-top:1px solid var(--border);padding-top:32px;
+  font-family:'DM Mono',monospace;font-size:.62rem;
+  color:var(--mist3);letter-spacing:.2em;text-transform:uppercase;
+}
+.footer .name{
+  display:block;margin-top:10px;
+  font-family:'Great Vibes',cursive;font-size:2.2rem;
+  background:linear-gradient(135deg,#f472b6,#c084fc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:.02em;
+}
+.footer .forever{
+  display:block;margin-top:6px;font-size:.54rem;
+  color:rgba(147,51,234,0.4);letter-spacing:.25em;
+}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(20,5,35,0.95);border:1px solid rgba(147,51,234,0.3);
+  border-radius:50px;padding:10px 20px;
+  font-family:'DM Mono',monospace;font-size:.62rem;
+  color:var(--mist2);letter-spacing:.06em;
+  z-index:9999;pointer-events:none;
+  opacity:0;transition:opacity .3s,transform .3s;
+  backdrop-filter:blur(16px);
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* RESPONSIVE */
+@media(max-width:480px){
+  #wrap{padding:36px 14px 70px;}
+  .ded-card{padding:22px 20px;}
+  .card-top{padding:13px 13px;gap:11px;}
+  .player-inner{padding:10px 13px 13px;}
+  .song-ded,.song-lyrics{padding-left:13px;padding-right:13px;}
+  h1{font-size:clamp(3rem,14vw,5rem);}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="grain"></div>
+<div id="hearts"></div>
+<div id="cursor-glow"></div>
+<div class="toast" id="toast"></div>
+
+<div id="wrap">
+
+  <header class="header">
+    <div class="date-badge" id="date-badge">con amor, para siempre</div>
+    <div class="cats-row">
+      <img class="cat-gif" src="https://media1.tenor.com/m/MapB0PgXvaMAAAAi/mochi-cat-smooch.gif" alt="" title="✨">
+      <img class="cat-gif" src="https://media1.tenor.com/m/LiGTbtBFUdEAAAAj/peach-and-goma-hugging.gif" alt="" title="💜">
+      <img class="cat-gif" src="https://media1.tenor.com/m/mxg1RwQmzQQAAAAj/peach-goma-love-pat-head-cheek.gif" alt="" title="🌸">
+    </div>
+    <h1>MyLove</h1>
+    <p class="subtitle">Dedicada a ti, Nataly</p>
+  </header>
+
+  <div class="ded-card">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <p>Cada canción aquí guarda un pedazo de lo que siento por ti. Son momentos, recuerdos, promesas que no caben en palabras ordinarias. Mientras escuchas, espero que sientas todo el amor que quiero expresarte.</p>
+  </div>
+
+  <div class="gif-strip">
+    <img src="https://media1.tenor.com/m/prOl9wYGThUAAAAj/love-you-cat.gif" alt="">
+    <img src="https://media1.tenor.com/m/bRPn3f5rg0gAAAAj/mochi-cat-couple.gif" alt="">
+    <img src="https://media1.tenor.com/m/CRupKoCv1tEAAAAi/%EB%AA%A8%EC%B0%8C%EB%83%A5.gif" alt="">
+    <img src="https://media1.tenor.com/m/ivKWdfdbV3EAAAAi/goma-goma-cat.gif" alt="">
+    <img src="https://media1.tenor.com/m/X0AU4rFwjYsAAAAi/mochi-cat-mad-cat.gif" alt="">
+  </div>
+
+  <div class="divider">para ti</div>
+
+  <div class="spotify-wrap">
+    <a href="https://open.spotify.com/playlist/69cxVBuI4OWxaREweYmggw?si=NmOoVmsnQzG1EHjZAPJRCA"
+       target="_blank" class="sp-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+      Escuchar playlist completa
+    </a>
+  </div>
+
+  <p class="section-title">Las canciones</p>
+  <div class="songs-grid" id="songs-grid"></div>
+
+  <div class="center-cat">
+    <img src="https://media1.tenor.com/m/ujq2yTt6EuoAAAAi/crystal-amaru.gif" alt="" id="center-cat-img">
+  </div>
+
+  <div class="love-counter">
+    Canciones reproducidas hoy · <span id="play-count">0</span>
+  </div>
+
+  <footer class="footer">
+    Hecho con todo mi amor para ti
+    <span class="name">Nataly</span>
+    <span class="forever">∞ &nbsp; siempre &nbsp; ∞</span>
+  </footer>
+
+</div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PROTECCIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('copy',e=>e.preventDefault());
+document.addEventListener('cut',e=>e.preventDefault());
+document.addEventListener('dragstart',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&['c','x','a','u','s','p'].includes(e.key.toLowerCase()))e.preventDefault();
+  if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(e.key.toLowerCase())))e.preventDefault();
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CURSOR GLOW (solo desktop)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const cursorGlow=document.getElementById('cursor-glow');
+if(window.matchMedia('(pointer:fine)').matches){
+  document.addEventListener('mousemove',e=>{
+    cursorGlow.style.left=e.clientX+'px';
+    cursorGlow.style.top=e.clientY+'px';
+  },{passive:true});
+} else {
+  cursorGlow.style.display='none';
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOAST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CORAZONES FLOTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+(function(){
+  const c=document.getElementById('hearts');
+  const sym=['💜','🌸','✨','💫','🩷','💕','🌺','⭐'];
+  function spawn(){
+    const h=document.createElement('span');
+    h.className='heart';
+    h.textContent=sym[Math.floor(Math.random()*sym.length)];
+    const dur=8+Math.random()*9;
+    h.style.cssText=`left:${Math.random()*100}%;font-size:${0.65+Math.random()*0.7}rem;animation-duration:${dur}s;animation-delay:${Math.random()*3}s;`;
+    c.appendChild(h);
+    setTimeout(()=>h.remove(),(dur+4)*1000);
+  }
+  for(let i=0;i<12;i++)spawn();
+  setInterval(spawn,1800);
+})();
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CANVAS BG — partículas aurora
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+(function(){
+  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  let W,H;
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize,{passive:true});
+
+  // Orbes lentas tipo aurora
+  const orbs=[
+    {x:.2,y:.3,r:260,c:'#9333ea',a:.06,da:.0004},
+    {x:.8,y:.7,r:220,c:'#ec4899',a:.05,da:-.0003},
+    {x:.5,y:.1,r:180,c:'#5b1a8a',a:.08,da:.0005},
+    {x:.1,y:.8,r:200,c:'#c084fc',a:.04,da:-.0004},
+    {x:.9,y:.2,r:150,c:'#ec4899',a:.05,da:.0006},
+  ];
+  // Partículas pequeñas
+  const P=Array.from({length:55},()=>({
+    x:Math.random(),y:Math.random(),r:Math.random()*.9+0.12,
+    a:Math.random()*.5+.05,da:(Math.random()-.5)*.003,
+    c:Math.random()>.55?'#ec4899':'#9333ea'
+  }));
+  let last=0,paused=false;
+  document.addEventListener('visibilitychange',()=>{paused=document.hidden;},{passive:true});
+  function draw(ts){
+    requestAnimationFrame(draw);
+    if(paused||ts-last<40)return;last=ts;
+    ctx.clearRect(0,0,W,H);
+    // Orbes aurora
+    for(const o of orbs){
+      o.a+=o.da;if(o.a>0.12||o.a<0.02)o.da*=-1;
+      const grd=ctx.createRadialGradient(o.x*W,o.y*H,0,o.x*W,o.y*H,o.r);
+      grd.addColorStop(0,o.c+(Math.round(o.a*255).toString(16).padStart(2,'0')));
+      grd.addColorStop(1,'transparent');
+      ctx.fillStyle=grd;ctx.globalAlpha=1;ctx.beginPath();
+      ctx.arc(o.x*W,o.y*H,o.r,0,Math.PI*2);ctx.fill();
+    }
+    // Partículas
+    for(const p of P){
+      p.a+=p.da;if(p.a>0.6||p.a<0.04)p.da*=-1;
+      ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.c;ctx.globalAlpha=p.a*.5;ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  draw(0);
+})();
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DATOS DE CANCIONES
+   ✅ Con iTunesId FIJO para evitar errores de búsqueda
+   Si iTunesId es null → busca por texto como fallback
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const SONGS=[
+  {
+    title:"Labios Rotos",artist:"Zoé",
+    iTunesId:null,
+    searchOverride:"Labios Rotos Zoé",
+    ded:"Por nuestros besos y cada encuentro que guardo en el corazón.",
+    lyrics:"Labios rotos de tanto besar... lo que queda de tu amor."
+  },
+  {
+    title:"Ya No Vivo Por Vivir",artist:"Juan Gabriel & Natalia Lafourcade",
+    iTunesId:null,
+    searchOverride:"Ya No Vivo Por Vivir Juan Gabriel Natalia Lafourcade",
+    ded:"Porque desde que llegaste, vivir tiene otro significado.",
+    lyrics:"Ya no vivo por vivir, vivo por amarte a ti..."
+  },
+  {
+    title:"Amor Mío",artist:"Frank Sark",
+    iTunesId:null,
+    searchOverride:"Amor Mio Frank Sark",
+    ded:"Simple y profundo, exactamente como nuestro amor.",
+    lyrics:"Amor mío, eres todo lo que necesito."
+  },
+  {
+    title:"UNDERSTAND",artist:"keshi",
+    iTunesId:null,
+    searchOverride:"UNDERSTAND keshi",
+    ded:"Espero que entiendas lo profundo que es lo que siento por ti.",
+    lyrics:"I hope you understand the way I feel for you."
+  },
+  {
+    title:"I Can't Let You Go",artist:"Love Spells",
+    iTunesId:null,
+    searchOverride:"I Can't Let You Go Love Spells",
+    artistMatch:"Love Spells",
+    ded:"No podría dejarte ir, eres todo para mí.",
+    lyrics:"I can't let you go... you're everything I know."
+  },
+  {
+    title:"I Miss You So",artist:"MINOVA",
+    iTunesId:null,
+    searchOverride:"I Miss You So MINOVA",
+    artistMatch:"MINOVA",
+    ded:"Te extraño en cada segundo que no estás cerca.",
+    lyrics:"I miss you so, more than words can say..."
+  },
+  {
+    title:"Just Kiss Her",artist:"Concorde",
+    iTunesId:null,
+    searchOverride:"Just Kiss Her Concorde",
+    artistMatch:"Concorde",
+    ded:"Porque tus besos son mi lugar favorito en el mundo.",
+    lyrics:"Just kiss her... tell her that you love her."
+  },
+  {
+    title:"Lovebomb",artist:"The Neighbourhood",
+    iTunesId:null,
+    searchOverride:"Lovebomb The Neighbourhood",
+    artistMatch:"Neighbourhood",
+    ded:"Exploto de amor cada vez que te tengo cerca.",
+    lyrics:"You're a lovebomb going off in my heart."
+  },
+  {
+    title:"Just a Feeling",artist:"The Marías",
+    iTunesId:null,
+    searchOverride:"Just a Feeling The Marias",
+    artistMatch:"Marías",
+    ded:"Es solo un sentimiento que ninguna palabra alcanza a describir.",
+    lyrics:"It's just a feeling, can't explain... you and I."
+  },
+  {
+    title:"Luna",artist:"Wisp",
+    iTunesId:null,
+    searchOverride:"Luna Wisp",
+    artistMatch:"Wisp",
+    ded:"Eres mi luz cuando todo lo demás se apaga.",
+    lyrics:"Luna, ilumina mi camino... siempre estás aquí."
+  },
+];
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SISTEMA DE BÚSQUEDA ROBUSTO EN ITUNES
+   Con múltiples estrategias + validación estricta de artista
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const iTunesCache={};
+
+function artistMatches(resultArtist, songArtistMatch){
+  if(!songArtistMatch)return true; // sin restricción
+  const r=resultArtist.toLowerCase();
+  return songArtistMatch.toLowerCase().split(' ').some(w=>w.length>2&&r.includes(w));
+}
+
+function titleMatches(resultTitle, songTitle){
+  const rt=resultTitle.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+  const st=songTitle.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+  return rt.includes(st.substring(0,Math.min(10,st.length)));
+}
+
+async function iTunesSearch(song){
+  const cKey=song.title+'||'+song.artist;
+  if(iTunesCache[cKey])return iTunesCache[cKey];
+
+  // Si tiene ID fijo — búsqueda directa (máxima precisión)
+  if(song.iTunesId){
+    try{
+      const r=await fetch(`https://itunes.apple.com/lookup?id=${song.iTunesId}`);
+      const j=await r.json();
+      if(j.results?.length){
+        const t=j.results[0];
+        const res={preview:t.previewUrl||null,art:t.artworkUrl100?.replace('100x100bb','600x600bb')||null,found:true};
+        iTunesCache[cKey]=res;return res;
+      }
+    }catch(e){}
+  }
+
+  // Búsqueda por texto con validación estricta
+  const queries=[
+    song.searchOverride||(`${song.title} ${song.artist}`),
+    `${song.title} ${song.artist.split(/[&,]/)[0].trim()}`,
+    song.title,
+  ];
+
+  for(const q of queries){
+    try{
+      const r=await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=8`);
+      const j=await r.json();
+      if(!j.results?.length)continue;
+
+      // Filtrar: el título debe coincidir (evita resultados totalmente diferentes)
+      let candidates=j.results.filter(t=>titleMatches(t.trackName||'',song.title));
+
+      // Si hay artistMatch, preferir coincidencia de artista
+      if(song.artistMatch&&candidates.length){
+        const strict=candidates.filter(t=>artistMatches(t.artistName||'',song.artistMatch));
+        if(strict.length)candidates=strict;
+      }
+
+      if(!candidates.length){
+        // último recurso: tomar el primero que tenga title match sin filtro artista
+        candidates=j.results.filter(t=>titleMatches(t.trackName||'',song.title));
+      }
+      if(!candidates.length)continue;
+
+      const t=candidates[0];
+      const res={
+        preview:t.previewUrl||null,
+        art:t.artworkUrl100?.replace('100x100bb','600x600bb')||null,
+        found:!!t.previewUrl,
+        foundArtist:t.artistName||'',
+        foundTitle:t.trackName||''
+      };
+      iTunesCache[cKey]=res;
+      return res;
+    }catch(e){}
+  }
+
+  const empty={preview:null,art:null,found:false};
+  iTunesCache[cKey]=empty;
+  return empty;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PLAY COUNTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let playCount=0;
+function incrementPlay(){
+  playCount++;
+  document.getElementById('play-count').textContent=playCount;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   AUDIO MANAGER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const AM=(()=>{
+  let cur=null;
+  function toggle(audio,card){
+    if(cur&&cur.audio===audio&&!audio.paused){
+      audio.pause();card.setPlaying(false);cur=null;
+    } else {
+      if(cur&&cur.audio!==audio){cur.audio.pause();cur.audio.currentTime=0;cur.card.setPlaying(false);}
+      cur={audio,card};
+      audio.play().catch(()=>{});
+      card.setPlaying(true);
+      incrementPlay();
+    }
+  }
+  return{toggle};
+})();
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BUILD CARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function buildCard(song,idx){
+  const card=document.createElement('div');
+  card.className='song-card';
+  card.innerHTML=`
+    <div class="card-top">
+      <div class="num-badge">${String(idx+1).padStart(2,'0')}</div>
+      <div class="card-art">
+        <div class="art-ph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(147,51,234,0.32)" stroke-width="1.5">
+            <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/>
+          </svg>
+        </div>
+        <div class="art-error">🎵</div>
+        <img alt="${song.title}">
+      </div>
+      <div class="card-info">
+        <div class="song-title">${song.title}</div>
+        <div class="song-artist">${song.artist}</div>
+      </div>
+      <button class="preview-btn" aria-label="Preview">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+    <div class="card-player">
+      <div class="player-inner">
+        <div class="prog-wrap"><div class="prog-track"><div class="prog-fill"></div></div></div>
+        <div class="player-meta">
+          <span class="time-display"><span class="spin"></span></span>
+          <div class="eq-bars off">
+            <div class="eq-bar"></div><div class="eq-bar"></div>
+            <div class="eq-bar"></div><div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="song-ded">${song.ded}</div>
+    <div class="song-lyrics">${song.lyrics}</div>
+  `;
+
+  const artImg=card.querySelector('img');
+  const artPh=card.querySelector('.art-ph');
+  const artErr=card.querySelector('.art-error');
+  const btn=card.querySelector('.preview-btn');
+  const playerEl=card.querySelector('.card-player');
+  const pfill=card.querySelector('.prog-fill');
+  const timeEl=card.querySelector('.time-display');
+  const eqEl=card.querySelector('.eq-bars');
+  let audio=null,loaded=false,isPlaying=false;
+  const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+
+  function setArt(url){
+    if(!url){artPh.style.display='none';artErr.style.display='flex';return;}
+    artImg.onload=()=>{artImg.classList.add('loaded');artPh.style.display='none';};
+    artImg.onerror=()=>{artPh.style.display='none';artErr.style.display='flex';};
+    artImg.src=url;
+  }
+
+  function setPlaying(state){
+    isPlaying=state;
+    btn.classList.toggle('playing',state);
+    btn.querySelector('svg').innerHTML=state
+      ?'<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+      :'<path d="M8 5v14l11-7z"/>';
+    eqEl.classList.toggle('off',!state);
+  }
+
+  function tick(){
+    if(!audio)return;
+    const pct=Math.min((audio.currentTime/(audio.duration||30))*100,100);
+    pfill.style.width=pct+'%';
+    timeEl.textContent=fmt(audio.currentTime)+' / '+fmt(audio.duration||30);
+    if(isPlaying)requestAnimationFrame(tick);
+  }
+
+  card.querySelector('.prog-wrap').addEventListener('click',e=>{
+    if(!audio||!audio.duration)return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    audio.currentTime=((e.clientX-rect.left)/rect.width)*audio.duration;
+  });
+
+  btn.addEventListener('click',async e=>{
+    e.stopPropagation();
+    playerEl.classList.add('open');
+    if(!loaded){
+      loaded=true;
+      timeEl.innerHTML='<span class="spin"></span>';
+      const res=await iTunesSearch(song);
+      setArt(res.art);
+      if(!res.preview){
+        timeEl.textContent='No disponible';
+        showToast(`"${song.title}" no tiene preview disponible`);
+        return;
+      }
+      audio=new Audio();
+      audio.src=res.preview;audio.volume=0.88;
+      audio.addEventListener('loadedmetadata',()=>{timeEl.textContent='0:00 / '+fmt(audio.duration);});
+      audio.addEventListener('ended',()=>{
+        setPlaying(false);pfill.style.width='0%';
+        audio.currentTime=0;timeEl.textContent='0:00 / '+fmt(audio.duration||30);
+      });
+      audio.addEventListener('error',()=>{timeEl.textContent='Error al cargar';});
+      AM.toggle(audio,{setPlaying});
+      requestAnimationFrame(tick);
+      return;
+    }
+    if(!audio)return;
+    AM.toggle(audio,{setPlaying});
+    if(isPlaying)requestAnimationFrame(tick);
+  });
+
+  // Preload art en background
+  iTunesSearch(song).then(res=>{
+    if(res.art&&!artImg.src)setArt(res.art);
+  });
+
+  return card;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   INTERSECTION OBSERVER — animación entrada
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function observe(cards){
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}
+    });
+  },{threshold:.05,rootMargin:'0px 0px -30px 0px'});
+  cards.forEach((c,i)=>{c.style.animationDelay=(i*.06)+'s';io.observe(c);});
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GSAP ANIMACIONES DE ENTRADA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function initAnimations(){
+  if(typeof gsap==='undefined')return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Entrada del wrap
+  gsap.to('#wrap',{opacity:1,duration:1,ease:'power2.out'});
+
+  // Header stagger
+  gsap.from('.header > *',{
+    y:30,opacity:0,duration:.8,stagger:.15,ease:'power3.out',delay:.2
+  });
+
+  // Ded card
+  gsap.from('.ded-card',{
+    y:20,opacity:0,duration:.7,ease:'power3.out',delay:.6
+  });
+
+  // GIF strip
+  gsap.from('.gif-strip img',{
+    scale:0.7,opacity:0,duration:.5,stagger:.07,ease:'back.out(1.8)',delay:.8
+  });
+
+  // ScrollTrigger para sección songs
+  gsap.from('.section-title',{
+    scrollTrigger:{trigger:'.section-title',start:'top 85%'},
+    y:15,opacity:0,duration:.6,ease:'power2.out'
+  });
+
+  // Botón Spotify
+  gsap.from('.sp-btn',{
+    scale:.9,opacity:0,duration:.6,ease:'back.out(1.5)',delay:.9
+  });
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GATO CENTRAL — easter egg al hacer click
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const msgs=['💜 ¡Para siempre!','🌸 Te amo, Nataly','✨ Eres mi favorita','💕 Mi amor infinito','🌺 Siempre juntos'];
+let msgIdx=0;
+document.getElementById('center-cat-img').addEventListener('click',()=>{
+  showToast(msgs[msgIdx%msgs.length]);msgIdx++;
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CATS ROW — click easter eggs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+document.querySelectorAll('.cat-gif').forEach(img=>{
+  img.addEventListener('click',()=>{
+    showToast('💜 ¡Miau! Te quiero mucho');
+    if(typeof gsap!=='undefined'){
+      gsap.fromTo(img,{scale:1.3,rotate:5},{scale:1,rotate:0,duration:.4,ease:'elastic.out(1,.5)'});
+    }
+  });
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   INIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+(function(){
+  const grid=document.getElementById('songs-grid');
+  const cards=SONGS.map((s,i)=>buildCard(s,i));
+  cards.forEach(c=>grid.appendChild(c));
+  observe(cards);
+  initAnimations();
+  if(typeof gsap==='undefined'){
+    document.getElementById('wrap').style.opacity='1';
+  }
+})();
+</script>
+</body>
+</html>
